@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Reliance Gulf Recruitment Portal V2.3 — Strict Agency Filter</title>
+<title>Reliance Gulf Recruitment Portal V2.5 — Multi Campaign Agency Access</title>
 <style>
 :root{
   --navy:#0b2b4d;--navy2:#164d78;--blue:#2f6fe4;--bg:#f5f8fc;--line:#dfe6ef;
@@ -108,7 +108,7 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 <div id="app" class="app hidden">
 <aside class="sidebar">
   <div class="logo-box"><img id="sideLogo" alt="Reliance Gulf"></div>
-  <div class="role-box"><small>Logged in as</small><strong id="roleText"></strong><small style="margin-top:8px;opacity:.65">Portal V2.3</small></div>
+  <div class="role-box"><small>Logged in as</small><strong id="roleText"></strong><small style="margin-top:8px;opacity:.65">Portal V2.5</small></div>
   <div class="nav" id="navMenu"></div>
   <div class="sidebar-footer"><button class="btn" onclick="logout()">Logout</button></div>
 </aside>
@@ -289,7 +289,7 @@ function baseVisibleCandidates(){
  let list=candidates;
  if(userRole()==='agency'){
   const assignedIds=availableCampaignsForDashboard().map(c=>c.id);
-  list=candidates.filter(c=>assignedIds.includes(c.campaignNo));
+  list=candidates.filter(c=>assignedIds.map(normId).includes(normId(c.campaignNo)));
  }
  if(userRole()!=='agency'&&currentUser?.allCampaigns===false&&Array.isArray(currentUser.campaignAccess)){
   list=list.filter(c=>currentUser.campaignAccess.includes(c.campaignNo));
@@ -299,33 +299,50 @@ function baseVisibleCandidates(){
 }
 function visibleCandidates(){
  const list=baseVisibleCandidates();
- return dashboardCampaign==='ALL'?list:list.filter(c=>c.campaignNo===dashboardCampaign);
+ return dashboardCampaign==='ALL'?list:list.filter(c=>normId(c.campaignNo)===normId(dashboardCampaign));
 }
 function availableCampaignsForDashboard(){
  const role=userRole();
  let list=[...campaigns];
 
  if(role==='agency'){
-  // Agency sees ONLY campaigns explicitly assigned to it.
-  // Supports both assignment methods:
-  // 1) campaign.agencyId matches profile.agencyId
-  // 2) campaign number exists in profile.campaignAccess
-  const granted=Array.isArray(currentUser.campaignAccess)?currentUser.campaignAccess:[];
-  list=list.filter(c=>
-   (currentUser.agencyId && c.agencyId===currentUser.agencyId) ||
-   granted.includes(c.id)
+  const granted=(Array.isArray(currentUser.campaignAccess)?currentUser.campaignAccess:[])
+   .map(normId).filter(Boolean);
+  const agencyId=normId(currentUser.agencyId);
+
+  let assigned=list.filter(c=>
+   (agencyId && normId(c.agencyId)===agencyId) ||
+   granted.includes(normId(c.id))
   );
- }else if(role==='interviewer'){
-  // Interviewer sees only directly assigned campaigns or specifically granted campaigns.
+
+  // Fallback: profile may contain an assigned campaign that has not yet
+  // been copied into portal_app_state. Keep it visible instead of showing nothing.
+  for(const id of granted){
+   if(!assigned.some(c=>normId(c.id)===id)){
+    assigned.push({
+     id,
+     name:'Assigned Campaign',
+     status:'Open',
+     agencyId:currentUser.agencyId||''
+    });
+   }
+  }
+  return assigned;
+ }
+
+ if(role==='interviewer'){
   list=list.filter(c=>
-   c.interviewerId===currentUser.id ||
-   c.interviewerId===currentUser.authId ||
-   (currentUser.allCampaigns===false &&
+   normId(c.interviewerId)===normId(currentUser.id) ||
+   normId(c.interviewerId)===normId(currentUser.authId) ||
+   (
+    currentUser.allCampaigns===false &&
     Array.isArray(currentUser.campaignAccess) &&
-    currentUser.campaignAccess.includes(c.id))
+    currentUser.campaignAccess.map(normId).includes(normId(c.id))
+   )
   );
  }else if(currentUser?.allCampaigns===false && Array.isArray(currentUser.campaignAccess)){
-  list=list.filter(c=>currentUser.campaignAccess.includes(c.id));
+  const granted=currentUser.campaignAccess.map(normId);
+  list=list.filter(c=>granted.includes(normId(c.id)));
  }
 
  return list;
@@ -349,7 +366,7 @@ function refreshDashboardCampaignFilter(){
   }
 
   select.innerHTML=available
-   .map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name)}</option>`)
+   .map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name||"Assigned Campaign")}</option>`)
    .join('');
 
   if(current&&available.some(c=>c.id===current)){
@@ -364,7 +381,7 @@ function refreshDashboardCampaignFilter(){
  }
 
  select.innerHTML='<option value="ALL">All Campaigns</option>'+
-  available.map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name)}</option>`).join('');
+  available.map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name||"Assigned Campaign")}</option>`).join('');
 
  if(current!=='ALL'&&available.some(c=>c.id===current)){
   select.value=current;
@@ -386,7 +403,7 @@ function within3(date){if(!date)return false;const d=new Date(date+'T00:00:00'),
 
 function adminCounts(){
  const visible=baseVisibleCandidates();
- const source=dashboardCampaign==='ALL'?visible:visible.filter(c=>c.campaignNo===dashboardCampaign);
+ const source=dashboardCampaign==='ALL'?visible:visible.filter(c=>normId(c.campaignNo)===normId(dashboardCampaign));
  const list=source.filter(selected);
  return {
   selected:list,
@@ -505,7 +522,7 @@ function openAddCandidate(){
  modalTitle.textContent='Add New Employee';
  modalBody.innerHTML=`${disabled?'<div class="note">No open campaign assigned. Super User must create and assign a campaign first.</div>':''}<form id="candidateForm"><div class="form-grid">
  <label>Candidate ID<input name="id" value="${nextCandidateId()}" readonly></label>
- <label>Campaign<select name="campaignNo" ${disabled?'disabled':''} required><option value="">Select Campaign</option>${camps.map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name)}</option>`).join('')}</select></label>
+ <label>Campaign<select name="campaignNo" ${disabled?'disabled':''} required><option value="">Select Campaign</option>${camps.map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name||"Assigned Campaign")}</option>`).join('')}</select></label>
  <label>Full Name *<input name="fullName" required></label><label>Father's Name<input name="fatherName"></label>
  <label>Date of Birth *<input name="dob" id="dob" type="date" required onchange="age.value=calcAge(this.value)+' Years'"></label><label>Age<input id="age" name="age" readonly></label>
  <label>Nationality
@@ -905,11 +922,60 @@ function showUsers(){
 }
 
 function userCampaignOptions(selected=[],all=true){
- return `<label style="grid-column:1/-1">Campaign Access<select id="userCampaignMode" name="campaignMode" onchange="toggleCampaignAccessFields()"><option value="ALL" ${all?'selected':''}>All Campaigns</option><option value="SELECTED" ${!all?'selected':''}>Selected Campaigns Only</option></select></label>
- <div id="campaignAccessFields" style="grid-column:1/-1;${all?'display:none':''}"><label>Select Campaigns<select name="campaignAccess" multiple size="6">${campaigns.map(c=>`<option value="${esc(c.id)}" ${selected.includes(c.id)?'selected':''}>${esc(c.id)} — ${esc(c.name)}</option>`).join('')}</select></label><small style="color:var(--muted)">Hold Ctrl to select more than one campaign.</small></div>`;
+ const selectedSet=new Set((selected||[]).map(normId));
+ const cards=campaigns.length
+  ? campaigns.map(c=>`
+    <label style="display:flex;align-items:flex-start;gap:10px;margin:0;padding:11px;border:1px solid var(--line);border-radius:9px;background:#fff">
+      <input type="checkbox" name="campaignAccess" value="${esc(c.id)}"
+       ${selectedSet.has(normId(c.id))?'checked':''}
+       style="width:auto;margin:2px 0 0">
+      <span><b>${esc(c.id)}</b><br><small style="color:var(--muted)">${esc(c.name||'Campaign')}</small></span>
+    </label>`).join('')
+  : '<div class="note">No campaign has been created yet. First create a campaign from Campaign Management.</div>';
+
+ return `<label style="grid-column:1/-1">Campaign Access
+   <select id="userCampaignMode" name="campaignMode" onchange="toggleCampaignAccessFields()">
+    <option value="ALL" ${all?'selected':''}>All Campaigns</option>
+    <option value="SELECTED" ${!all?'selected':''}>Selected Campaigns Only</option>
+   </select>
+  </label>
+  <div id="campaignAccessFields" style="grid-column:1/-1;${all?'display:none':''}">
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:4px 0 10px">
+    <b>Assign One or Multiple Campaigns</b>
+    <div>
+     <button type="button" class="btn secondary" onclick="setAllCampaignChecks(true)">Select All</button>
+     <button type="button" class="btn secondary" onclick="setAllCampaignChecks(false)">Clear</button>
+    </div>
+   </div>
+   <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">${cards}</div>
+   <small style="display:block;color:var(--muted);margin-top:8px">Tick all campaigns that this user is allowed to access. You can edit the user later and add more campaigns.</small>
+  </div>`;
 }
-function toggleCampaignAccessFields(){const box=document.getElementById('campaignAccessFields'),mode=document.getElementById('userCampaignMode');if(box&&mode)box.style.display=mode.value==='ALL'?'none':''}
-function toggleAgencyFields(){const role=document.querySelector('#userAccountForm [name=role]')?.value,isAgency=role==='agency';document.getElementById('agencyFields')?.classList.toggle('hidden',!isAgency)}
+function setAllCampaignChecks(checked){
+ document.querySelectorAll('#campaignAccessFields input[name="campaignAccess"]').forEach(x=>x.checked=checked);
+}
+function toggleCampaignAccessFields(){
+ const box=document.getElementById('campaignAccessFields');
+ const mode=document.getElementById('userCampaignMode');
+ if(box&&mode)box.style.display=mode.value==='ALL'?'none':'';
+}
+function toggleAgencyFields(){
+ const role=document.querySelector('#userAccountForm [name=role]')?.value;
+ const isAgency=role==='agency';
+ document.getElementById('agencyFields')?.classList.toggle('hidden',!isAgency);
+
+ const mode=document.getElementById('userCampaignMode');
+ if(mode){
+  const allOption=mode.querySelector('option[value="ALL"]');
+  if(isAgency){
+   mode.value='SELECTED';
+   if(allOption)allOption.disabled=true;
+  }else{
+   if(allOption)allOption.disabled=false;
+  }
+  toggleCampaignAccessFields();
+ }
+}
 
 
 // ============================================================
@@ -989,8 +1055,13 @@ function openUserForm(id=''){
   const agencyName=String(f.get('agencyName')||'').trim(),agencyId=String(f.get('agencyId')||'').trim().toUpperCase();
   if(role==='agency'&&(!agencyName||!agencyId)){alert('Agency Name and Agency ID are required.');return}
   if(role==='agency'&&users.some(x=>x.role==='agency'&&x.agencyId===agencyId&&x.id!==u?.id)){alert('This Agency ID already exists.');return}
-  const campaignMode=String(f.get('campaignMode')),campaignAccess=[...e.target.querySelectorAll('[name=campaignAccess] option:checked')].map(o=>o.value);
-  const payload={action:u?'update':'create',id:u?.id||null,userId:uid,password:password||null,fullName:String(f.get('name')).trim(),role,active:f.get('active')==='true',allCampaigns:campaignMode==='ALL',campaignAccess,agencyName:role==='agency'?agencyName:null,agencyId:role==='agency'?agencyId:null,entryAllowed:role==='agency'?f.get('entryAllowed')==='on':true};
+  const campaignMode=String(f.get('campaignMode'));
+  const campaignAccess=[...e.target.querySelectorAll('input[name="campaignAccess"]:checked')].map(o=>o.value);
+  if(role==='agency'&&!campaignAccess.length){
+   alert('Please assign at least one campaign to the agency user.');
+   return;
+  }
+  const payload={action:u?'update':'create',id:u?.id||null,userId:uid,password:password||null,fullName:String(f.get('name')).trim(),role,active:f.get('active')==='true',allCampaigns:role==='agency'?false:campaignMode==='ALL',campaignAccess,agencyName:role==='agency'?agencyName:null,agencyId:role==='agency'?agencyId:null,entryAllowed:role==='agency'?f.get('entryAllowed')==='on':true};
   const btn=e.submitter;btn.disabled=true;btn.textContent='Saving...';
   try{
    if(u){
