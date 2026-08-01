@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Reliance Gulf Recruitment Portal V2.2 — Live Agency Campaigns</title>
+<title>Reliance Gulf Recruitment Portal V2.3 — Strict Agency Filter</title>
 <style>
 :root{
   --navy:#0b2b4d;--navy2:#164d78;--blue:#2f6fe4;--bg:#f5f8fc;--line:#dfe6ef;
@@ -108,7 +108,7 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 <div id="app" class="app hidden">
 <aside class="sidebar">
   <div class="logo-box"><img id="sideLogo" alt="Reliance Gulf"></div>
-  <div class="role-box"><small>Logged in as</small><strong id="roleText"></strong></div>
+  <div class="role-box"><small>Logged in as</small><strong id="roleText"></strong><small style="margin-top:8px;opacity:.65">Portal V2.3</small></div>
   <div class="nav" id="navMenu"></div>
   <div class="sidebar-footer"><button class="btn" onclick="logout()">Logout</button></div>
 </aside>
@@ -289,10 +289,7 @@ function baseVisibleCandidates(){
  let list=candidates;
  if(userRole()==='agency'){
   const assignedIds=availableCampaignsForDashboard().map(c=>c.id);
-  list=candidates.filter(c=>
-   c.agencyId===currentUser.agencyId ||
-   assignedIds.includes(c.campaignNo)
-  );
+  list=candidates.filter(c=>assignedIds.includes(c.campaignNo));
  }
  if(userRole()!=='agency'&&currentUser?.allCampaigns===false&&Array.isArray(currentUser.campaignAccess)){
   list=list.filter(c=>currentUser.campaignAccess.includes(c.campaignNo));
@@ -309,8 +306,15 @@ function availableCampaignsForDashboard(){
  let list=[...campaigns];
 
  if(role==='agency'){
-  // Agency sees only campaigns assigned to that agency.
-  list=list.filter(c=>c.agencyId===currentUser.agencyId);
+  // Agency sees ONLY campaigns explicitly assigned to it.
+  // Supports both assignment methods:
+  // 1) campaign.agencyId matches profile.agencyId
+  // 2) campaign number exists in profile.campaignAccess
+  const granted=Array.isArray(currentUser.campaignAccess)?currentUser.campaignAccess:[];
+  list=list.filter(c=>
+   (currentUser.agencyId && c.agencyId===currentUser.agencyId) ||
+   granted.includes(c.id)
+  );
  }else if(role==='interviewer'){
   // Interviewer sees only directly assigned campaigns or specifically granted campaigns.
   list=list.filter(c=>
@@ -329,23 +333,46 @@ function availableCampaignsForDashboard(){
 function refreshDashboardCampaignFilter(){
  const select=document.getElementById('campaignDashboardSelect');
  if(!select)return;
+
  const available=availableCampaignsForDashboard();
  const current=dashboardCampaign;
- const allowAll=userRole()!=='agency';
- select.innerHTML=(allowAll?'<option value="ALL">All Campaigns</option>':'')+
+ const isAgency=userRole()==='agency';
+
+ if(isAgency){
+  // Never show "All Campaigns" to an agency.
+  if(!available.length){
+   select.innerHTML='<option value="">No campaign assigned</option>';
+   select.value='';
+   select.disabled=true;
+   dashboardCampaign='';
+   return;
+  }
+
+  select.innerHTML=available
+   .map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name)}</option>`)
+   .join('');
+
+  if(current&&available.some(c=>c.id===current)){
+   select.value=current;
+  }else{
+   dashboardCampaign=available[0].id;
+   select.value=dashboardCampaign;
+  }
+
+  select.disabled=available.length===1;
+  return;
+ }
+
+ select.innerHTML='<option value="ALL">All Campaigns</option>'+
   available.map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name)}</option>`).join('');
 
  if(current!=='ALL'&&available.some(c=>c.id===current)){
   select.value=current;
- }else if(!allowAll&&available.length){
-  dashboardCampaign=available[0].id;
-  select.value=dashboardCampaign;
  }else{
   dashboardCampaign='ALL';
   select.value='ALL';
  }
-
- select.disabled=!allowAll&&available.length<=1;
+ select.disabled=false;
 }
 function changeDashboardCampaign(value){
  dashboardCampaign=value||'ALL';
@@ -468,7 +495,7 @@ function stage(c){
 
 function nextCandidateId(){const n=Math.max(0,...candidates.map(c=>Number(c.id.split('-').pop())||0))+1;return 'EMP-'+String(n).padStart(6,'0')}
 function calcAge(d){if(!d)return'';const dob=new Date(d+'T00:00:00'),t=new Date();let a=t.getFullYear()-dob.getFullYear();const m=t.getMonth()-dob.getMonth();if(m<0||(m===0&&t.getDate()<dob.getDate()))a--;return a}
-function agencyCampaigns(){return campaigns.filter(c=>c.agencyId===currentUser.agencyId&&c.status==='Open')}
+function agencyCampaigns(){return availableCampaignsForDashboard().filter(c=>c.status==='Open')}
 const crafts=['Pipe Fabricator','Pipe Fitter','Structural Fabricator','Structural Fitter','Welder - GTAW/SMAW','Welder - SMAW','Welder - FCAW','Mechanical Technician','Mechanical Foreman','Mechanical Supervisor','Piping Supervisor','Rigger','Rigging Supervisor','Scaffolder','Scaffolding Supervisor','Millwright Fitter','Equipment Fitter','Valve Technician','Machinist','Grinder','Helper'];
 
 function openAddCandidate(){
@@ -531,7 +558,7 @@ function openAddCandidate(){
     <label>Home City<input name="city"></label>
  </div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary" ${disabled?'disabled':''}>Save Candidate</button></div></form>`;
  modalBg.classList.remove('hidden');
- candidateForm.onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),passport=String(f.get('passport')).trim().toUpperCase();if(candidates.some(c=>c.passport===passport)){alert('Passport already exists.');return}const camp=campaigns.find(c=>c.id===f.get('campaignNo')&&c.agencyId===currentUser.agencyId&&c.status==='Open');if(!camp){alert('Invalid campaign.');return}const des=f.get('designation')==='ADD_MORE'?String(f.get('customDesignation')).trim():String(f.get('designation'));if(!des){alert('Please select designation.');return}const c={id:f.get('id'),fullName:String(f.get('fullName')).trim(),fatherName:f.get('fatherName'),dob:f.get('dob'),age:f.get('age'),nationality:f.get('nationality'),passport,passportType:f.get('passportType'),passportExpiry:f.get('passportExpiry'),contact:f.get('contact'),email:f.get('email'),qualification:f.get('qualification'),designation:des,totalExp:Number(f.get('totalExp')||0),gulfExp:Number(f.get('gulfExp')||0),currentSalary:Number(f.get('currentSalary')||0),expectedSalary:Number(f.get('expectedSalary')||0),agencyId:currentUser.agencyId,agencyName:currentUser.agencyName,campaignNo:camp.id,campaignName:camp.name,state:f.get('state'),city:f.get('city'),history:[{date:new Date().toISOString(),text:'Candidate added by '+currentUser.agencyName}]};candidates.unshift(c);persist();closeModal();renderDashboard();showHome();alert('Candidate saved: '+c.id)}
+ candidateForm.onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),passport=String(f.get('passport')).trim().toUpperCase();if(candidates.some(c=>c.passport===passport)){alert('Passport already exists.');return}const camp=agencyCampaigns().find(c=>c.id===f.get('campaignNo'));if(!camp){alert('Invalid campaign.');return}const des=f.get('designation')==='ADD_MORE'?String(f.get('customDesignation')).trim():String(f.get('designation'));if(!des){alert('Please select designation.');return}const c={id:f.get('id'),fullName:String(f.get('fullName')).trim(),fatherName:f.get('fatherName'),dob:f.get('dob'),age:f.get('age'),nationality:f.get('nationality'),passport,passportType:f.get('passportType'),passportExpiry:f.get('passportExpiry'),contact:f.get('contact'),email:f.get('email'),qualification:f.get('qualification'),designation:des,totalExp:Number(f.get('totalExp')||0),gulfExp:Number(f.get('gulfExp')||0),currentSalary:Number(f.get('currentSalary')||0),expectedSalary:Number(f.get('expectedSalary')||0),agencyId:currentUser.agencyId,agencyName:currentUser.agencyName,campaignNo:camp.id,campaignName:camp.name,state:f.get('state'),city:f.get('city'),history:[{date:new Date().toISOString(),text:'Candidate added by '+currentUser.agencyName}]};candidates.unshift(c);persist();closeModal();renderDashboard();showHome();alert('Candidate saved: '+c.id)}
 }
 
 function openCandidate(id){
