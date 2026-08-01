@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Reliance Gulf Recruitment Portal V2.7 — Edit Button Working</title>
+<title>Reliance Gulf Recruitment Portal V2.9 — Reviewed Edit Fix</title>
 <style>
 :root{
   --navy:#0b2b4d;--navy2:#164d78;--blue:#2f6fe4;--bg:#f5f8fc;--line:#dfe6ef;
@@ -108,7 +108,7 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 <div id="app" class="app hidden">
 <aside class="sidebar">
   <div class="logo-box"><img id="sideLogo" alt="Reliance Gulf"></div>
-  <div class="role-box"><small>Logged in as</small><strong id="roleText"></strong><small style="margin-top:8px;opacity:.65">Portal V2.7</small></div>
+  <div class="role-box"><small>Logged in as</small><strong id="roleText"></strong><small style="margin-top:8px;opacity:.65">Portal V2.9 Reviewed</small></div>
   <div class="nav" id="navMenu"></div>
   <div class="sidebar-footer"><button class="btn" onclick="logout()">Logout</button></div>
 </aside>
@@ -216,6 +216,7 @@ async function savePortalState(){
  }
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function normId(v){return String(v??'').trim().toUpperCase()}
 function roleLabel(r){return r==='superuser'?'Super User':r==='admin'?'Admin / HR':r==='interviewer'?'Interviewer':'Recruitment Agency'}
 function userRole(){return currentUser?.role||''}
 function togglePassword(){loginPass.type=loginPass.type==='password'?'text':'password'}
@@ -918,23 +919,8 @@ function showUsers(){
  if(userRole()!=='superuser')return;
  const ordered=[...users].sort((a,b)=>roleLabel(a.role).localeCompare(roleLabel(b.role))||String(a.name).localeCompare(String(b.name)));
  mainPanel.innerHTML=`<div class="panel-head"><div><h2>User Management</h2><small style="color:var(--muted)">Create and control Admin, Interviewer and Agency login accounts.</small></div><button class="btn primary" onclick="openUserForm()">Create New User</button></div>
- <div class="table-wrap"><table><thead><tr><th>Name / Agency</th><th>User ID</th><th>Role</th><th>Campaign Access</th><th>Status</th><th>Entry</th><th>Action</th></tr></thead><tbody>${ordered.map(u=>`<tr><td><b>${esc(u.role==='agency'?(u.agencyName||u.name):u.name)}</b>${u.agencyId?`<br><small>${esc(u.agencyId)}</small>`:''}</td><td>${esc(u.userId)}</td><td><span class="tag">${esc(roleLabel(u.role))}</span></td><td>${u.allCampaigns!==false?'All Campaigns':esc((u.campaignAccess||[]).join(', ')||'Assigned only')}</td><td>${u.active?'<span style="color:var(--green);font-weight:700">Active</span>':'<span style="color:var(--red);font-weight:700">Inactive</span>'}</td><td>${u.role==='agency'?(u.entryAllowed===false?'View Only':'Allowed'):'-'}</td><td><button type="button" class="btn secondary user-edit-btn" data-user-id="${esc(u.authId||u.id||u.userId)}">Edit</button> ${u.id==='super'?'':`<button type="button" class="btn danger user-deactivate-btn" data-user-id="${esc(u.authId||u.id||u.userId)}">Deactivate</button>`}</td></tr>`).join('')||'<tr><td colspan="7">No users available.</td></tr>'}</tbody></table></div>`;
+ <div class="table-wrap"><table><thead><tr><th>Name / Agency</th><th>User ID</th><th>Role</th><th>Campaign Access</th><th>Status</th><th>Entry</th><th>Action</th></tr></thead><tbody>${ordered.map(u=>`<tr><td><b>${esc(u.role==='agency'?(u.agencyName||u.name):u.name)}</b>${u.agencyId?`<br><small>${esc(u.agencyId)}</small>`:''}</td><td>${esc(u.userId)}</td><td><span class="tag">${esc(roleLabel(u.role))}</span></td><td>${u.allCampaigns!==false?'All Campaigns':esc((u.campaignAccess||[]).join(', ')||'Assigned only')}</td><td>${u.active?'<span style="color:var(--green);font-weight:700">Active</span>':'<span style="color:var(--red);font-weight:700">Inactive</span>'}</td><td>${u.role==='agency'?(u.entryAllowed===false?'View Only':'Allowed'):'-'}</td><td><button type="button" class="btn secondary" onclick="openUserForm('${esc(u.userId)}')">Edit</button> ${u.id==='super'?'':`<button type="button" class="btn danger" onclick="deleteUserAccount('${esc(u.userId)}')">Deactivate</button>`}</td></tr>`).join('')||'<tr><td colspan="7">No users available.</td></tr>'}</tbody></table></div>`;
 
- mainPanel.querySelectorAll('.user-edit-btn').forEach(btn=>{
-  btn.onclick=event=>{
-   event.preventDefault();
-   event.stopPropagation();
-   openUserForm(btn.dataset.userId);
-  };
- });
-
- mainPanel.querySelectorAll('.user-deactivate-btn').forEach(btn=>{
-  btn.onclick=event=>{
-   event.preventDefault();
-   event.stopPropagation();
-   deleteUserAccount(btn.dataset.userId);
-  };
- });
 }
 
 function userCampaignOptions(selected=[],all=true){
@@ -1044,65 +1030,151 @@ async function deactivatePortalUser(authId){
 }
 
 function openUserForm(id=''){
- if(userRole()!=='superuser')return;
- const lookup=String(id||'');
- const u=lookup?users.find(x=>
-  String(x.id||'')===lookup ||
-  String(x.authId||'')===lookup ||
-  String(x.userId||'')===lookup
- ):null;
- if(lookup&&!u){
-  alert('User record could not be found. Please refresh the page and try again.');
-  return;
- }
- const isSuper=u?.id==='super';
- modalTitle.textContent=u?'Edit User':'Create New User';
- modalBody.innerHTML=`<form id="userAccountForm"><div class="form-grid">
- <label>Full Name *<input name="name" value="${esc(u?.name||'')}" required></label>
- <label>User ID *<input name="userId" value="${esc(u?.userId||'')}" required ${isSuper?'readonly':''}></label>
- <label>${u?'New Password':'Password *'}<div class="password-wrap"><input id="accountPassword" name="password" type="password" ${u?'placeholder="Leave blank to keep current password"':'required'}><button type="button" class="eye-btn" onclick="accountPassword.type=accountPassword.type==='password'?'text':'password'">👁</button></div></label>
- <label>Confirm Password<div class="password-wrap"><input id="accountConfirmPassword" name="confirmPassword" type="password" ${u?'placeholder="Only required when changing password"':'required'}></div></label>
- <label>Role *<select name="role" onchange="toggleAgencyFields()" ${isSuper?'disabled':''}><option value="admin" ${u?.role==='admin'?'selected':''}>Admin / HR</option><option value="interviewer" ${u?.role==='interviewer'?'selected':''}>Interviewer</option><option value="agency" ${u?.role==='agency'?'selected':''}>Recruitment Agency</option>${isSuper?'<option value="superuser" selected>Super User</option>':''}</select></label>
- <label>Status<select name="active"><option value="true" ${u?.active!==false?'selected':''}>Active</option><option value="false" ${u?.active===false?'selected':''}>Inactive</option></select></label>
- <div id="agencyFields" class="form-grid ${u?.role==='agency'?'':'hidden'}" style="grid-column:1/-1;margin:0">
- <label>Agency Name *<input name="agencyName" value="${esc(u?.agencyName||'')}"></label><label>Agency ID *<input name="agencyId" value="${esc(u?.agencyId||'')}" placeholder="AGY-001"></label>
- <label style="grid-column:1/-1"><input type="checkbox" name="entryAllowed" ${u?.entryAllowed!==false?'checked':''} style="width:auto"> Allow Candidate Entry</label></div>
- ${userCampaignOptions(u?.campaignAccess||[],u?.allCampaigns!==false)}
- </div><div class="note">V2 uses Supabase Authentication directly and does not require an Edge Function. The browser never stores passwords. For an existing user, leave password blank; password changes must be done through Supabase Authentication or password reset.</div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary">${u?'Save Changes':'Create User'}</button></div></form>`;
- modalBg.classList.remove('hidden');toggleAgencyFields();
- userAccountForm.onsubmit=async e=>{
-  e.preventDefault();const f=new FormData(e.target),uid=String(f.get('userId')).trim().toUpperCase(),password=String(f.get('password')||''),confirmPassword=String(f.get('confirmPassword')||'');
-  if(users.some(x=>x.userId.toUpperCase()===uid&&x.id!==u?.id)){alert('This User ID already exists.');return}
-  if(password!==confirmPassword){alert('Password and Confirm Password do not match.');return}
-  if(!u&&!password){alert('Password is required.');return}
-  if(password&&password.length<8){alert('Password must contain at least 8 characters.');return}
-  const role=isSuper?'superuser':String(f.get('role'));
-  const agencyName=String(f.get('agencyName')||'').trim(),agencyId=String(f.get('agencyId')||'').trim().toUpperCase();
-  if(role==='agency'&&(!agencyName||!agencyId)){alert('Agency Name and Agency ID are required.');return}
-  if(role==='agency'&&users.some(x=>x.role==='agency'&&x.agencyId===agencyId&&x.id!==u?.id)){alert('This Agency ID already exists.');return}
-  const campaignMode=String(f.get('campaignMode'));
-  const campaignAccess=[...e.target.querySelectorAll('input[name="campaignAccess"]:checked')].map(o=>o.value);
-  if(role==='agency'&&!campaignAccess.length){
-   alert('Please assign at least one campaign to the agency user.');
+ try{
+  if(userRole()!=='superuser'){
+   alert('Only the Super User can edit user accounts.');
    return;
   }
-  const payload={action:u?'update':'create',id:u?.id||null,userId:uid,password:password||null,fullName:String(f.get('name')).trim(),role,active:f.get('active')==='true',allCampaigns:role==='agency'?false:campaignMode==='ALL',campaignAccess,agencyName:role==='agency'?agencyName:null,agencyId:role==='agency'?agencyId:null,entryAllowed:role==='agency'?f.get('entryAllowed')==='on':true};
-  const btn=e.submitter;btn.disabled=true;btn.textContent='Saving...';
-  try{
-   if(u){
-    if(password)throw new Error('For security, an existing user password cannot be changed from browser-only V2. Use Supabase Authentication → Users → Send password recovery or update the password there.');
-    await savePortalProfile(payload,u.authId||u.id);
-   }else{
-    const created=await createBrowserAuthUser(payload);
-    await savePortalProfile(payload,created.authId);
-   }
-   await loadSupabaseUsers();closeModal();showUsers();
-   alert(u?'User profile updated successfully.':'New Supabase user created successfully.');
-  }catch(err){alert('Unable to save user: '+(err.message||err));}
-  finally{btn.disabled=false;btn.textContent=u?'Save Changes':'Create User'}
- };
-}
 
+  const lookup=String(id||'').trim();
+  const u=lookup
+   ? users.find(x=>
+      normId(x.id)===normId(lookup) ||
+      normId(x.authId)===normId(lookup) ||
+      normId(x.userId)===normId(lookup)
+     )
+   : null;
+
+  if(lookup&&!u){
+   alert('User record could not be found. Refresh the page and try again.');
+   return;
+  }
+
+  const isSuper=u?.role==='superuser';
+  const modalTitleEl=document.getElementById('modalTitle');
+  const modalBodyEl=document.getElementById('modalBody');
+  const modalBgEl=document.getElementById('modalBg');
+
+  if(!modalTitleEl||!modalBodyEl||!modalBgEl){
+   throw new Error('Edit modal elements are missing from the page.');
+  }
+
+  modalTitleEl.textContent=u?'Edit User':'Create New User';
+  modalBodyEl.innerHTML=`<form id="userAccountForm"><div class="form-grid">
+  <label>Full Name *<input name="name" value="${esc(u?.name||'')}" required></label>
+  <label>User ID *<input name="userId" value="${esc(u?.userId||'')}" required ${isSuper?'readonly':''}></label>
+  <label>${u?'New Password':'Password *'}<div class="password-wrap"><input id="accountPassword" name="password" type="password" ${u?'placeholder="Leave blank to keep current password"':'required'}><button type="button" class="eye-btn" onclick="document.getElementById('accountPassword').type=document.getElementById('accountPassword').type==='password'?'text':'password'">👁</button></div></label>
+  <label>Confirm Password<div class="password-wrap"><input name="confirmPassword" type="password" ${u?'placeholder="Only required when changing password"':'required'}></div></label>
+  <label>Role *<select name="role" onchange="toggleAgencyFields()" ${isSuper?'disabled':''}><option value="admin" ${u?.role==='admin'?'selected':''}>Admin / HR</option><option value="interviewer" ${u?.role==='interviewer'?'selected':''}>Interviewer</option><option value="agency" ${u?.role==='agency'?'selected':''}>Recruitment Agency</option>${isSuper?'<option value="superuser" selected>Super User</option>':''}</select></label>
+  <label>Status<select name="active"><option value="true" ${u?.active!==false?'selected':''}>Active</option><option value="false" ${u?.active===false?'selected':''}>Inactive</option></select></label>
+  <div id="agencyFields" class="form-grid ${u?.role==='agency'?'':'hidden'}" style="grid-column:1/-1;margin:0">
+   <label>Agency Name *<input name="agencyName" value="${esc(u?.agencyName||'')}"></label>
+   <label>Agency ID *<input name="agencyId" value="${esc(u?.agencyId||'')}" placeholder="AGY-001"></label>
+   <label style="grid-column:1/-1"><input type="checkbox" name="entryAllowed" ${u?.entryAllowed!==false?'checked':''} style="width:auto"> Allow Candidate Entry</label>
+  </div>
+  ${userCampaignOptions(u?.campaignAccess||[],u?.allCampaigns!==false)}
+  </div>
+  <div class="note">For an existing user, leave password blank. Password changes must be handled through Supabase Authentication or password reset.</div>
+  <div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button type="submit" class="btn primary">${u?'Save Changes':'Create User'}</button></div></form>`;
+
+  modalBgEl.classList.remove('hidden');
+  toggleAgencyFields();
+
+  const form=document.getElementById('userAccountForm');
+  if(!form)throw new Error('User form could not be created.');
+
+  form.onsubmit=async event=>{
+   event.preventDefault();
+   const submitButton=event.submitter||form.querySelector('button[type="submit"]');
+   const f=new FormData(form);
+   const uid=String(f.get('userId')||'').trim().toUpperCase();
+   const password=String(f.get('password')||'');
+   const confirmPassword=String(f.get('confirmPassword')||'');
+
+   if(users.some(x=>normId(x.userId)===normId(uid)&&normId(x.userId)!==normId(u?.userId))){
+    alert('This User ID already exists.');
+    return;
+   }
+   if(password!==confirmPassword){alert('Password and Confirm Password do not match.');return}
+   if(!u&&!password){alert('Password is required.');return}
+   if(password&&password.length<8){alert('Password must contain at least 8 characters.');return}
+
+   const role=isSuper?'superuser':String(f.get('role'));
+   const agencyName=String(f.get('agencyName')||'').trim();
+   const agencyId=String(f.get('agencyId')||'').trim().toUpperCase();
+
+   if(role==='agency'&&(!agencyName||!agencyId)){
+    alert('Agency Name and Agency ID are required.');
+    return;
+   }
+
+   if(role==='agency'&&users.some(x=>
+      x.role==='agency' &&
+      normId(x.agencyId)===normId(agencyId) &&
+      normId(x.userId)!==normId(u?.userId)
+   )){
+    alert('This Agency ID already exists.');
+    return;
+   }
+
+   const campaignMode=String(f.get('campaignMode')||'SELECTED');
+   const campaignAccess=[...form.querySelectorAll('input[name="campaignAccess"]:checked')].map(input=>input.value);
+
+   if(role==='agency'&&!campaignAccess.length){
+    alert('Please assign at least one campaign to the agency user.');
+    return;
+   }
+
+   const payload={
+    action:u?'update':'create',
+    id:u?.id||null,
+    userId:uid,
+    password:password||null,
+    fullName:String(f.get('name')||'').trim(),
+    role,
+    active:f.get('active')==='true',
+    allCampaigns:role==='agency'?false:campaignMode==='ALL',
+    campaignAccess,
+    agencyName:role==='agency'?agencyName:null,
+    agencyId:role==='agency'?agencyId:null,
+    entryAllowed:role==='agency'?f.get('entryAllowed')==='on':true
+   };
+
+   if(submitButton){
+    submitButton.disabled=true;
+    submitButton.textContent='Saving...';
+   }
+
+   try{
+    if(u){
+     if(password){
+      throw new Error('Existing user password cannot be changed from browser-only V2. Use Supabase Authentication.');
+     }
+     await savePortalProfile(payload,u.authId||u.id);
+    }else{
+     const created=await createBrowserAuthUser(payload);
+     await savePortalProfile(payload,created.authId);
+    }
+
+    await loadSupabaseUsers();
+    closeModal();
+    showUsers();
+    alert(u?'User profile updated successfully.':'New Supabase user created successfully.');
+   }catch(error){
+    console.error('Save user error:',error);
+    alert('Unable to save user: '+(error.message||error));
+   }finally{
+    if(submitButton){
+     submitButton.disabled=false;
+     submitButton.textContent=u?'Save Changes':'Create User';
+    }
+   }
+  };
+ }catch(error){
+  console.error('Open Edit User error:',error);
+  alert('Unable to open Edit User: '+(error.message||error));
+ }
+}
 async function deleteUserAccount(id){
  if(userRole()!=='superuser')return;
  const lookup=String(id||'');
@@ -1479,22 +1551,6 @@ if(supabaseClient){
 }
 
 
-document.addEventListener('click',event=>{
- const editBtn=event.target.closest('.user-edit-btn');
- if(editBtn){
-  event.preventDefault();
-  event.stopPropagation();
-  openUserForm(editBtn.dataset.userId);
-  return;
- }
-
- const deactivateBtn=event.target.closest('.user-deactivate-btn');
- if(deactivateBtn){
-  event.preventDefault();
-  event.stopPropagation();
-  deleteUserAccount(deactivateBtn.dataset.userId);
- }
-});
 
 function closeModal(){modalBg.classList.add('hidden')}
 loginLogo.src=LOGO;sideLogo.src=LOGO;if(!SUPABASE_READY)supabaseConfigWarning.style.display='block';
