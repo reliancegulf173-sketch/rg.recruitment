@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Reliance Gulf Recruitment Portal V2</title>
+<title>Reliance Gulf Recruitment Portal V2 — No Edge Function</title>
 <style>
 :root{
   --navy:#0b2b4d;--navy2:#164d78;--blue:#2f6fe4;--bg:#f5f8fc;--line:#dfe6ef;
@@ -168,46 +168,41 @@ const SUPABASE_URL='https://yqscamqwdozpnsqizmny.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_8B1Jg1ql_p0TjkwzeK83Gg_ykS195-a';
 const SUPABASE_READY=SUPABASE_URL.startsWith('https://')&&!SUPABASE_PUBLISHABLE_KEY.startsWith('PASTE_');
 const supabaseClient=SUPABASE_READY?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY):null;
+// V2: isolated client creates a new Auth account without replacing the Super User's session.
+// No service-role/secret key is stored in this HTML.
+const accountSignupClient=SUPABASE_READY?window.supabase.createClient(
+ SUPABASE_URL,
+ SUPABASE_PUBLISHABLE_KEY,
+ {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}
+):null;
 const DEFAULT_USERS=[];
-let users=[],campaigns=[],candidates=[],currentUser=null,currentOps='selected',dashboardCampaign='ALL';
-let stateSaveTimer=null,stateLoaded=false;
+let users=[],campaigns=load(KEYS.campaigns,[]),candidates=load(KEYS.candidates,[]),currentUser=null,currentOps='selected',dashboardCampaign='ALL';
 
 function load(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}}
-function persist(){
- localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
- localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
- if(!supabaseClient||!currentUser)return;
- clearTimeout(stateSaveTimer);
- stateSaveTimer=setTimeout(savePortalState,350);
-}
-async function loadPortalState(){
- if(!supabaseClient)return;
- const {data,error}=await supabaseClient.from('portal_app_state').select('campaigns,candidates').eq('state_key','main').maybeSingle();
- if(error)throw error;
- campaigns=Array.isArray(data?.campaigns)?data.campaigns:[];
- candidates=Array.isArray(data?.candidates)?data.candidates:[];
- stateLoaded=true;
- localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
- localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
-}
-async function savePortalState(){
- if(!supabaseClient||!currentUser||!stateLoaded)return;
- const {error}=await supabaseClient.from('portal_app_state').upsert({state_key:'main',campaigns,candidates,updated_by:currentUser.userId,updated_at:new Date().toISOString()},{onConflict:'state_key'});
- if(error){console.error('Supabase save failed:',error);alert('Data could not be saved to Supabase: '+error.message);}
-}
+function persist(){localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));localStorage.setItem(KEYS.candidates,JSON.stringify(candidates))}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function roleLabel(r){return r==='superuser'?'Super User':r==='admin'?'Admin / HR':r==='interviewer'?'Interviewer':'Recruitment Agency'}
 function userRole(){return currentUser?.role||''}
 function togglePassword(){loginPass.type=loginPass.type==='password'?'text':'password'}
 
 function loginEmailFromUserId(userId){
- const value=String(userId).trim();
- if(value.includes('@'))return value.toLowerCase();
- if(value.toUpperCase()==='RELIANCEGULF')return 'admin@reliancegulf.com';
- return `${value.toLowerCase().replace(/[^a-z0-9._-]/g,'')}@rg-recruitment.local`;
+ return `${String(userId).trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')}@rg-recruitment.local`;
 }
 function profileToPortalUser(p){
- return {id:p.user_id,authId:p.user_id,userId:p.user_id,loginId:p.username||'',name:p.full_name,role:p.role,active:p.active,allCampaigns:p.all_campaigns,campaignAccess:p.campaign_access||[],agencyName:p.agency_name||'',agencyId:p.agency_id||'',entryAllowed:p.entry_allowed!==false};
+ return {
+  id:p.user_id,
+  authId:p.user_id,
+  profileId:p.id,
+  userId:p.username||'',
+  name:p.full_name,
+  role:p.role,
+  active:p.active,
+  allCampaigns:p.all_campaigns,
+  campaignAccess:Array.isArray(p.campaign_access)?p.campaign_access:[],
+  agencyName:p.agency_name||'',
+  agencyId:p.agency_id||'',
+  entryAllowed:p.entry_allowed!==false
+ };
 }
 async function fetchMyProfile(authId){
  const {data,error}=await supabaseClient.from('portal_profiles').select('*').eq('user_id',authId).single();
@@ -226,7 +221,12 @@ async function login(e){
  const id=loginUser.value.trim().toUpperCase(),pass=loginPass.value;
  const submit=e.submitter; if(submit){submit.disabled=true;submit.textContent='Signing in...'}
  try{
-  const {data,error}=await supabaseClient.auth.signInWithPassword({email:loginEmailFromUserId(id),password:pass});
+  let email=loginEmailFromUserId(id);
+  let {data,error}=await supabaseClient.auth.signInWithPassword({email,password:pass});
+  // Compatibility for the first Super User that was created manually in Supabase.
+  if(error&&id==='RELIANCEGULF'){
+   ({data,error}=await supabaseClient.auth.signInWithPassword({email:'admin@reliancegulf.com',password:pass}));
+  }
   if(error)throw error;
   const u=await fetchMyProfile(data.user.id);
   if(!u.active){await supabaseClient.auth.signOut();throw new Error('This user access is closed by Super User.');}
@@ -798,7 +798,7 @@ function showUsers(){
  if(userRole()!=='superuser')return;
  const ordered=[...users].sort((a,b)=>roleLabel(a.role).localeCompare(roleLabel(b.role))||String(a.name).localeCompare(String(b.name)));
  mainPanel.innerHTML=`<div class="panel-head"><div><h2>User Management</h2><small style="color:var(--muted)">Create and control Admin, Interviewer and Agency login accounts.</small></div><button class="btn primary" onclick="openUserForm()">Create New User</button></div>
- <div class="table-wrap"><table><thead><tr><th>Name / Agency</th><th>User ID</th><th>Role</th><th>Campaign Access</th><th>Status</th><th>Entry</th><th>Action</th></tr></thead><tbody>${ordered.map(u=>`<tr><td><b>${esc(u.role==='agency'?(u.agencyName||u.name):u.name)}</b>${u.agencyId?`<br><small>${esc(u.agencyId)}</small>`:''}</td><td>${esc(u.userId)}</td><td><span class="tag">${esc(roleLabel(u.role))}</span></td><td>${u.allCampaigns!==false?'All Campaigns':esc((u.campaignAccess||[]).join(', ')||'Assigned only')}</td><td>${u.active?'<span style="color:var(--green);font-weight:700">Active</span>':'<span style="color:var(--red);font-weight:700">Inactive</span>'}</td><td>${u.role==='agency'?(u.entryAllowed===false?'View Only':'Allowed'):'-'}</td><td><button class="btn secondary" onclick="openUserForm('${u.id}')">Edit</button> ${u.id==='super'?'':`<button class="btn danger" onclick="deleteUserAccount('${u.id}')">Delete</button>`}</td></tr>`).join('')||'<tr><td colspan="7">No users available.</td></tr>'}</tbody></table></div>`;
+ <div class="table-wrap"><table><thead><tr><th>Name / Agency</th><th>User ID</th><th>Role</th><th>Campaign Access</th><th>Status</th><th>Entry</th><th>Action</th></tr></thead><tbody>${ordered.map(u=>`<tr><td><b>${esc(u.role==='agency'?(u.agencyName||u.name):u.name)}</b>${u.agencyId?`<br><small>${esc(u.agencyId)}</small>`:''}</td><td>${esc(u.userId)}</td><td><span class="tag">${esc(roleLabel(u.role))}</span></td><td>${u.allCampaigns!==false?'All Campaigns':esc((u.campaignAccess||[]).join(', ')||'Assigned only')}</td><td>${u.active?'<span style="color:var(--green);font-weight:700">Active</span>':'<span style="color:var(--red);font-weight:700">Inactive</span>'}</td><td>${u.role==='agency'?(u.entryAllowed===false?'View Only':'Allowed'):'-'}</td><td><button class="btn secondary" onclick="openUserForm('${u.id}')">Edit</button> ${u.id==='super'?'':`<button class="btn danger" onclick="deleteUserAccount('${u.id}')">Deactivate</button>`}</td></tr>`).join('')||'<tr><td colspan="7">No users available.</td></tr>'}</tbody></table></div>`;
 }
 
 function userCampaignOptions(selected=[],all=true){
@@ -807,6 +807,56 @@ function userCampaignOptions(selected=[],all=true){
 }
 function toggleCampaignAccessFields(){const box=document.getElementById('campaignAccessFields'),mode=document.getElementById('userCampaignMode');if(box&&mode)box.style.display=mode.value==='ALL'?'none':''}
 function toggleAgencyFields(){const role=document.querySelector('#userAccountForm [name=role]')?.value,isAgency=role==='agency';document.getElementById('agencyFields')?.classList.toggle('hidden',!isAgency)}
+
+
+// ============================================================
+// VERSION 2 — USER CREATION WITHOUT AN EDGE FUNCTION
+// ============================================================
+// New accounts are created through Supabase Auth signUp using an isolated client.
+// The logged-in Super User remains signed in. Profiles remain protected by RLS.
+async function createBrowserAuthUser(payload){
+ const email=loginEmailFromUserId(payload.userId);
+ const {data,error}=await accountSignupClient.auth.signUp({
+  email,
+  password:payload.password,
+  options:{
+   data:{
+    full_name:payload.fullName,
+    username:payload.userId,
+    agency_name:payload.agencyName||''
+   }
+  }
+ });
+ if(error)throw error;
+ if(!data?.user?.id)throw new Error('Supabase did not return the new user ID.');
+ return {authId:data.user.id,email};
+}
+
+async function savePortalProfile(payload,authId){
+ const row={
+  user_id:authId,
+  full_name:payload.fullName,
+  username:payload.userId,
+  role:payload.role,
+  active:payload.active,
+  all_campaigns:payload.allCampaigns,
+  campaign_access:payload.campaignAccess||[],
+  agency_name:payload.agencyName||null,
+  agency_id:payload.agencyId||null,
+  entry_allowed:payload.entryAllowed!==false,
+  updated_at:new Date().toISOString()
+ };
+ const {error}=await supabaseClient.from('portal_profiles').upsert(row,{onConflict:'user_id'});
+ if(error)throw error;
+}
+
+async function deactivatePortalUser(authId){
+ const {error}=await supabaseClient
+  .from('portal_profiles')
+  .update({active:false,updated_at:new Date().toISOString()})
+  .eq('user_id',authId);
+ if(error)throw error;
+}
 
 function openUserForm(id=''){
  if(userRole()!=='superuser')return;
@@ -824,7 +874,7 @@ function openUserForm(id=''){
  <label>Agency Name *<input name="agencyName" value="${esc(u?.agencyName||'')}"></label><label>Agency ID *<input name="agencyId" value="${esc(u?.agencyId||'')}" placeholder="AGY-001"></label>
  <label style="grid-column:1/-1"><input type="checkbox" name="entryAllowed" ${u?.entryAllowed!==false?'checked':''} style="width:auto"> Allow Candidate Entry</label></div>
  ${userCampaignOptions(u?.campaignAccess||[],u?.allCampaigns!==false)}
- </div><div class="note">Passwords are securely managed by Supabase Authentication. The browser never stores user passwords. User ID is converted internally to a private login email.</div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary">${u?'Save Changes':'Create User'}</button></div></form>`;
+ </div><div class="note">V2 uses Supabase Authentication directly and does not require an Edge Function. The browser never stores passwords. For an existing user, leave password blank; password changes must be done through Supabase Authentication or password reset.</div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary">${u?'Save Changes':'Create User'}</button></div></form>`;
  modalBg.classList.remove('hidden');toggleAgencyFields();
  userAccountForm.onsubmit=async e=>{
   e.preventDefault();const f=new FormData(e.target),uid=String(f.get('userId')).trim().toUpperCase(),password=String(f.get('password')||''),confirmPassword=String(f.get('confirmPassword')||'');
@@ -840,9 +890,15 @@ function openUserForm(id=''){
   const payload={action:u?'update':'create',id:u?.id||null,userId:uid,password:password||null,fullName:String(f.get('name')).trim(),role,active:f.get('active')==='true',allCampaigns:campaignMode==='ALL',campaignAccess,agencyName:role==='agency'?agencyName:null,agencyId:role==='agency'?agencyId:null,entryAllowed:role==='agency'?f.get('entryAllowed')==='on':true};
   const btn=e.submitter;btn.disabled=true;btn.textContent='Saving...';
   try{
-   const {data,error}=await supabaseClient.functions.invoke('admin-users',{body:payload});
-   if(error)throw error;if(data?.error)throw new Error(data.error);
-   await loadSupabaseUsers();closeModal();showUsers();alert(u?'User updated successfully.':'New Supabase user created successfully.');
+   if(u){
+    if(password)throw new Error('For security, an existing user password cannot be changed from browser-only V2. Use Supabase Authentication → Users → Send password recovery or update the password there.');
+    await savePortalProfile(payload,u.authId||u.id);
+   }else{
+    const created=await createBrowserAuthUser(payload);
+    await savePortalProfile(payload,created.authId);
+   }
+   await loadSupabaseUsers();closeModal();showUsers();
+   alert(u?'User profile updated successfully.':'New Supabase user created successfully.');
   }catch(err){alert('Unable to save user: '+(err.message||err));}
   finally{btn.disabled=false;btn.textContent=u?'Save Changes':'Create User'}
  };
@@ -862,11 +918,12 @@ Assigned Campaigns: ${assigned.length}`))return;
 Press OK to also delete its local campaigns and candidates.
 Press Cancel to delete only the login user.`);
  try{
-  const {data,error}=await supabaseClient.functions.invoke('admin-users',{body:{action:'delete',id}});if(error)throw error;if(data?.error)throw new Error(data.error);
+  await deactivatePortalUser(u.authId||u.id);
   if(u.role==='agency'&&removeData){campaigns=campaigns.filter(c=>c.agencyId!==u.agencyId);candidates=candidates.filter(c=>c.agencyId!==u.agencyId)}
   else if(u.role==='interviewer')campaigns.forEach(c=>{if(c.interviewerId===u.id){c.interviewerId='';c.interviewerName='Unassigned'}});
   persist();await loadSupabaseUsers();showUsers();renderDashboard();
- }catch(err){alert('Unable to delete user: '+(err.message||err));}
+  alert('User access has been deactivated. The Auth account is retained for audit and recovery.');
+ }catch(err){alert('Unable to deactivate user: '+(err.message||err));}
 }
 
 // Backward-compatible buttons used by older code.
@@ -876,7 +933,7 @@ function deleteAgency(id){deleteUserAccount(id)}
 
 function showCampaigns(){
  if(userRole()!=='superuser')return;
- mainPanel.innerHTML=`<div class="panel-head"><h2>Campaign Management</h2><button class="btn primary" onclick="createCampaign()">Create Campaign</button></div><div class="table-wrap"><table><thead><tr><th>No.</th><th>Name</th><th>Agency</th><th>Interviewer</th><th>Status</th><th>Action</th></tr></thead><tbody>${campaigns.map(c=>`<tr><td><b>${c.id}</b></td><td>${esc(c.name)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.interviewerName)}</td><td>${c.status}</td><td><button class="btn secondary" onclick="toggleCampaign('${c.id}')">${c.status==='Open'?'Close':'Open'}</button> <button class="btn danger" onclick="deleteCampaign('${c.id}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="6">No campaigns.</td></tr>'}</tbody></table></div>`
+ mainPanel.innerHTML=`<div class="panel-head"><h2>Campaign Management</h2><button class="btn primary" onclick="createCampaign()">Create Campaign</button></div><div class="table-wrap"><table><thead><tr><th>No.</th><th>Name</th><th>Agency</th><th>Interviewer</th><th>Status</th><th>Action</th></tr></thead><tbody>${campaigns.map(c=>`<tr><td><b>${c.id}</b></td><td>${esc(c.name)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.interviewerName)}</td><td>${c.status}</td><td><button class="btn secondary" onclick="toggleCampaign('${c.id}')">${c.status==='Open'?'Close':'Open'}</button> <button class="btn danger" onclick="deleteCampaign('${c.id}')">Deactivate</button></td></tr>`).join('')||'<tr><td colspan="6">No campaigns.</td></tr>'}</tbody></table></div>`
 }
 function nextCampaign(){const y=new Date().getFullYear(),n=Math.max(0,...campaigns.filter(c=>c.id.startsWith('CMP-'+y)).map(c=>Number(c.id.split('-').pop())||0))+1;return `CMP-${y}-${String(n).padStart(3,'0')}`}
 function createCampaign(){
@@ -887,8 +944,9 @@ function deleteCampaign(id){const c=campaigns.find(x=>x.id===id),count=candidate
 
 function clearTestingData(){if(!confirm('Are you sure you want to clear all candidates and campaigns?\nUser accounts will remain.'))return;candidates=[];campaigns=[];persist();renderDashboard();showHome();alert('Testing data cleared.')}
 
-async function refreshSharedDataFromStorage(){
- try{await loadPortalState()}catch(err){console.error(err);campaigns=load(KEYS.campaigns,[]);candidates=load(KEYS.candidates,[])}
+function refreshSharedDataFromStorage(){
+ campaigns=load(KEYS.campaigns,[]);
+ candidates=load(KEYS.candidates,[]);
 
  if(currentUser){
    const refreshedUser=users.find(u=>u.userId===currentUser.userId);
@@ -1200,13 +1258,6 @@ document.addEventListener('DOMContentLoaded',()=>{
    addExportToolbar();
  }
 });
-
-if(supabaseClient){
- supabaseClient.channel('portal-state-live').on('postgres_changes',{event:'UPDATE',schema:'public',table:'portal_app_state',filter:'state_key=eq.main'},async()=>{
-  if(!currentUser)return;
-  try{await loadPortalState();refreshDashboardCampaignFilter();renderDashboard();}catch(err){console.error(err)}
- }).subscribe();
-}
 
 function closeModal(){modalBg.classList.add('hidden')}
 loginLogo.src=LOGO;sideLogo.src=LOGO;if(!SUPABASE_READY)supabaseConfigWarning.style.display='block';
