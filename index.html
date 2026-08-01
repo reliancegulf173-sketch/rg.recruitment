@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Reliance Gulf Recruitment Portal V2.6 — Edit Button Fix</title>
+<title>Reliance Gulf Recruitment Portal V2.7 — Edit Button Working</title>
 <style>
 :root{
   --navy:#0b2b4d;--navy2:#164d78;--blue:#2f6fe4;--bg:#f5f8fc;--line:#dfe6ef;
@@ -108,7 +108,7 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 <div id="app" class="app hidden">
 <aside class="sidebar">
   <div class="logo-box"><img id="sideLogo" alt="Reliance Gulf"></div>
-  <div class="role-box"><small>Logged in as</small><strong id="roleText"></strong><small style="margin-top:8px;opacity:.65">Portal V2.6</small></div>
+  <div class="role-box"><small>Logged in as</small><strong id="roleText"></strong><small style="margin-top:8px;opacity:.65">Portal V2.7</small></div>
   <div class="nav" id="navMenu"></div>
   <div class="sidebar-footer"><button class="btn" onclick="logout()">Logout</button></div>
 </aside>
@@ -919,6 +919,22 @@ function showUsers(){
  const ordered=[...users].sort((a,b)=>roleLabel(a.role).localeCompare(roleLabel(b.role))||String(a.name).localeCompare(String(b.name)));
  mainPanel.innerHTML=`<div class="panel-head"><div><h2>User Management</h2><small style="color:var(--muted)">Create and control Admin, Interviewer and Agency login accounts.</small></div><button class="btn primary" onclick="openUserForm()">Create New User</button></div>
  <div class="table-wrap"><table><thead><tr><th>Name / Agency</th><th>User ID</th><th>Role</th><th>Campaign Access</th><th>Status</th><th>Entry</th><th>Action</th></tr></thead><tbody>${ordered.map(u=>`<tr><td><b>${esc(u.role==='agency'?(u.agencyName||u.name):u.name)}</b>${u.agencyId?`<br><small>${esc(u.agencyId)}</small>`:''}</td><td>${esc(u.userId)}</td><td><span class="tag">${esc(roleLabel(u.role))}</span></td><td>${u.allCampaigns!==false?'All Campaigns':esc((u.campaignAccess||[]).join(', ')||'Assigned only')}</td><td>${u.active?'<span style="color:var(--green);font-weight:700">Active</span>':'<span style="color:var(--red);font-weight:700">Inactive</span>'}</td><td>${u.role==='agency'?(u.entryAllowed===false?'View Only':'Allowed'):'-'}</td><td><button type="button" class="btn secondary user-edit-btn" data-user-id="${esc(u.authId||u.id||u.userId)}">Edit</button> ${u.id==='super'?'':`<button type="button" class="btn danger user-deactivate-btn" data-user-id="${esc(u.authId||u.id||u.userId)}">Deactivate</button>`}</td></tr>`).join('')||'<tr><td colspan="7">No users available.</td></tr>'}</tbody></table></div>`;
+
+ mainPanel.querySelectorAll('.user-edit-btn').forEach(btn=>{
+  btn.onclick=event=>{
+   event.preventDefault();
+   event.stopPropagation();
+   openUserForm(btn.dataset.userId);
+  };
+ });
+
+ mainPanel.querySelectorAll('.user-deactivate-btn').forEach(btn=>{
+  btn.onclick=event=>{
+   event.preventDefault();
+   event.stopPropagation();
+   deleteUserAccount(btn.dataset.userId);
+  };
+ });
 }
 
 function userCampaignOptions(selected=[],all=true){
@@ -950,22 +966,6 @@ function userCampaignOptions(selected=[],all=true){
    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">${cards}</div>
    <small style="display:block;color:var(--muted);margin-top:8px">Tick all campaigns that this user is allowed to access. You can edit the user later and add more campaigns.</small>
   </div>`;
-
- mainPanel.querySelectorAll('.user-edit-btn').forEach(btn=>{
-  btn.addEventListener('click',event=>{
-   event.preventDefault();
-   event.stopPropagation();
-   openUserForm(btn.dataset.userId);
-  });
- });
-
- mainPanel.querySelectorAll('.user-deactivate-btn').forEach(btn=>{
-  btn.addEventListener('click',event=>{
-   event.preventDefault();
-   event.stopPropagation();
-   deleteUserAccount(btn.dataset.userId);
-  });
- });
 }
 function setAllCampaignChecks(checked){
  document.querySelectorAll('#campaignAccessFields input[name="campaignAccess"]').forEach(x=>x.checked=checked);
@@ -1477,6 +1477,24 @@ if(supabaseClient){
   })
   .subscribe();
 }
+
+
+document.addEventListener('click',event=>{
+ const editBtn=event.target.closest('.user-edit-btn');
+ if(editBtn){
+  event.preventDefault();
+  event.stopPropagation();
+  openUserForm(editBtn.dataset.userId);
+  return;
+ }
+
+ const deactivateBtn=event.target.closest('.user-deactivate-btn');
+ if(deactivateBtn){
+  event.preventDefault();
+  event.stopPropagation();
+  deleteUserAccount(deactivateBtn.dataset.userId);
+ }
+});
 
 function closeModal(){modalBg.classList.add('hidden')}
 loginLogo.src=LOGO;sideLogo.src=LOGO;if(!SUPABASE_READY)supabaseConfigWarning.style.display='block';
