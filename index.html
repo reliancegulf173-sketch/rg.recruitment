@@ -169,23 +169,48 @@ const SUPABASE_PUBLISHABLE_KEY='sb_publishable_8B1Jg1ql_p0TjkwzeK83Gg_ykS195-a';
 const SUPABASE_READY=SUPABASE_URL.startsWith('https://')&&!SUPABASE_PUBLISHABLE_KEY.startsWith('PASTE_');
 const supabaseClient=SUPABASE_READY?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY):null;
 const DEFAULT_USERS=[];
-let users=[],campaigns=load(KEYS.campaigns,[]),candidates=load(KEYS.candidates,[]),currentUser=null,currentOps='selected',dashboardCampaign='ALL';
+let users=[],campaigns=[],candidates=[],currentUser=null,currentOps='selected',dashboardCampaign='ALL';
+let stateSaveTimer=null,stateLoaded=false;
 
 function load(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}}
-function persist(){localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));localStorage.setItem(KEYS.candidates,JSON.stringify(candidates))}
+function persist(){
+ localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
+ localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
+ if(!supabaseClient||!currentUser)return;
+ clearTimeout(stateSaveTimer);
+ stateSaveTimer=setTimeout(savePortalState,350);
+}
+async function loadPortalState(){
+ if(!supabaseClient)return;
+ const {data,error}=await supabaseClient.from('portal_app_state').select('campaigns,candidates').eq('state_key','main').maybeSingle();
+ if(error)throw error;
+ campaigns=Array.isArray(data?.campaigns)?data.campaigns:[];
+ candidates=Array.isArray(data?.candidates)?data.candidates:[];
+ stateLoaded=true;
+ localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
+ localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
+}
+async function savePortalState(){
+ if(!supabaseClient||!currentUser||!stateLoaded)return;
+ const {error}=await supabaseClient.from('portal_app_state').upsert({state_key:'main',campaigns,candidates,updated_by:currentUser.userId,updated_at:new Date().toISOString()},{onConflict:'state_key'});
+ if(error){console.error('Supabase save failed:',error);alert('Data could not be saved to Supabase: '+error.message);}
+}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function roleLabel(r){return r==='superuser'?'Super User':r==='admin'?'Admin / HR':r==='interviewer'?'Interviewer':'Recruitment Agency'}
 function userRole(){return currentUser?.role||''}
 function togglePassword(){loginPass.type=loginPass.type==='password'?'text':'password'}
 
 function loginEmailFromUserId(userId){
- return `${String(userId).trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')}@rg-recruitment.local`;
+ const value=String(userId).trim();
+ if(value.includes('@'))return value.toLowerCase();
+ if(value.toUpperCase()==='RELIANCEGULF')return 'admin@reliancegulf.com';
+ return `${value.toLowerCase().replace(/[^a-z0-9._-]/g,'')}@rg-recruitment.local`;
 }
 function profileToPortalUser(p){
- return {id:p.id,authId:p.id,userId:p.user_id,name:p.full_name,role:p.role,active:p.active,allCampaigns:p.all_campaigns,campaignAccess:p.campaign_access||[],agencyName:p.agency_name||'',agencyId:p.agency_id||'',entryAllowed:p.entry_allowed!==false};
+ return {id:p.user_id,authId:p.user_id,userId:p.user_id,loginId:p.username||'',name:p.full_name,role:p.role,active:p.active,allCampaigns:p.all_campaigns,campaignAccess:p.campaign_access||[],agencyName:p.agency_name||'',agencyId:p.agency_id||'',entryAllowed:p.entry_allowed!==false};
 }
 async function fetchMyProfile(authId){
- const {data,error}=await supabaseClient.from('portal_profiles').select('*').eq('id',authId).single();
+ const {data,error}=await supabaseClient.from('portal_profiles').select('*').eq('user_id',authId).single();
  if(error)throw error;
  return profileToPortalUser(data);
 }
@@ -862,9 +887,8 @@ function deleteCampaign(id){const c=campaigns.find(x=>x.id===id),count=candidate
 
 function clearTestingData(){if(!confirm('Are you sure you want to clear all candidates and campaigns?\nUser accounts will remain.'))return;candidates=[];campaigns=[];persist();renderDashboard();showHome();alert('Testing data cleared.')}
 
-function refreshSharedDataFromStorage(){
- campaigns=load(KEYS.campaigns,[]);
- candidates=load(KEYS.candidates,[]);
+async function refreshSharedDataFromStorage(){
+ try{await loadPortalState()}catch(err){console.error(err);campaigns=load(KEYS.campaigns,[]);candidates=load(KEYS.candidates,[])}
 
  if(currentUser){
    const refreshedUser=users.find(u=>u.userId===currentUser.userId);
@@ -1176,6 +1200,13 @@ document.addEventListener('DOMContentLoaded',()=>{
    addExportToolbar();
  }
 });
+
+if(supabaseClient){
+ supabaseClient.channel('portal-state-live').on('postgres_changes',{event:'UPDATE',schema:'public',table:'portal_app_state',filter:'state_key=eq.main'},async()=>{
+  if(!currentUser)return;
+  try{await loadPortalState();refreshDashboardCampaignFilter();renderDashboard();}catch(err){console.error(err)}
+ }).subscribe();
+}
 
 function closeModal(){modalBg.classList.add('hidden')}
 loginLogo.src=LOGO;sideLogo.src=LOGO;if(!SUPABASE_READY)supabaseConfigWarning.style.display='block';
