@@ -1171,8 +1171,8 @@ function openUserForm(id=''){
   modalBodyEl.innerHTML=`<form id="userAccountForm"><div class="form-grid">
   <label>Full Name *<input name="name" value="${esc(u?.name||'')}" required></label>
   <label>User ID *<input name="userId" value="${esc(u?.userId||'')}" required ${isSuper?'readonly':''}></label>
-  ${u?'':`<label>Password *<div class="password-wrap"><input id="accountPassword" name="password" type="password" required autocomplete="new-password"><button type="button" class="eye-btn" onclick="document.getElementById('accountPassword').type=document.getElementById('accountPassword').type==='password'?'text':'password'">👁</button></div></label>
-  <label>Confirm Password<div class="password-wrap"><input name="confirmPassword" type="password" required autocomplete="new-password"></div></label>`}
+  <label>${u?'New Password':'Password *'}<div class="password-wrap"><input id="accountPassword" name="password" type="password" ${u?'placeholder="Leave blank to keep current password"':'required'}><button type="button" class="eye-btn" onclick="document.getElementById('accountPassword').type=document.getElementById('accountPassword').type==='password'?'text':'password'">👁</button></div></label>
+  <label>Confirm Password<div class="password-wrap"><input name="confirmPassword" type="password" ${u?'placeholder="Only required when changing password"':'required'}></div></label>
   <label>Role *<select name="role" onchange="toggleAgencyFields()" ${isSuper?'disabled':''}><option value="admin" ${u?.role==='admin'?'selected':''}>Admin / HR</option><option value="interviewer" ${u?.role==='interviewer'?'selected':''}>Interviewer</option><option value="agency" ${u?.role==='agency'?'selected':''}>Recruitment Agency</option>${isSuper?'<option value="superuser" selected>Super User</option>':''}</select></label>
   <label>Status<select name="active"><option value="true" ${u?.active!==false?'selected':''}>Active</option><option value="false" ${u?.active===false?'selected':''}>Inactive</option></select></label>
   <div id="agencyFields" class="form-grid ${u?.role==='agency'?'':'hidden'}" style="grid-column:1/-1;margin:0">
@@ -1182,7 +1182,7 @@ function openUserForm(id=''){
   </div>
   ${userCampaignOptions(u?.campaignAccess||[],u?.allCampaigns!==false)}
   </div>
-  <div class="note">${u?'You can update the user role, status and campaign access here. Password changes must be handled through Supabase Authentication.':'Create the login password for this new user.'}</div>
+  <div class="note">For an existing user, leave password blank. Password changes must be handled through Supabase Authentication or password reset.</div>
   <div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button type="submit" class="btn primary">${u?'Save Changes':'Create User'}</button></div></form>`;
 
   modalBgEl.classList.remove('hidden');
@@ -1196,8 +1196,8 @@ function openUserForm(id=''){
    const submitButton=event.submitter||form.querySelector('button[type="submit"]');
    const f=new FormData(form);
    const uid=String(f.get('userId')||'').trim().toUpperCase();
-   const password=u?'':String(f.get('password')||'');
-   const confirmPassword=u?'':String(f.get('confirmPassword')||'');
+   const password=String(f.get('password')||'');
+   const confirmPassword=String(f.get('confirmPassword')||'');
 
    if(users.some(x=>normId(x.userId)===normId(uid)&&normId(x.userId)!==normId(u?.userId))){
     alert('This User ID already exists.');
@@ -1255,6 +1255,9 @@ function openUserForm(id=''){
 
    try{
     if(u){
+     if(password){
+      throw new Error('Existing user password cannot be changed from browser-only V2. Use Supabase Authentication.');
+     }
      await savePortalProfile(payload,u.authId||u.id);
     }else{
      const created=await createBrowserAuthUser(payload);
