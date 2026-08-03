@@ -333,6 +333,8 @@ function availableCampaignsForDashboard(){
 
  if(role==='interviewer'){
   list=list.filter(c=>
+   !normId(c.interviewerId) ||
+   normId(c.interviewerId)==='all' ||
    normId(c.interviewerId)===normId(currentUser.id) ||
    normId(c.interviewerId)===normId(currentUser.authId) ||
    (
@@ -612,9 +614,92 @@ function openCandidate(id){
 function editCandidate(id){
  const c=candidates.find(x=>x.id===id);if(!c)return;
  if(userRole()==='agency'&&c.interview){alert('Agency can edit only before interview.');return}
- modalTitle.textContent='Edit Candidate';
- modalBody.innerHTML=`<form id="editForm"><div class="form-grid"><label>Full Name<input name="fullName" value="${esc(c.fullName)}" required></label><label>Passport<input name="passport" value="${esc(c.passport)}" required></label><label>Date of Birth<input name="dob" type="date" value="${c.dob||''}"></label><label>Designation<input name="designation" value="${esc(c.designation)}"></label><label>Contact<input name="contact" value="${esc(c.contact||'')}"></label><label>Email<input name="email" value="${esc(c.email||'')}"></label></div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary">Save</button></div></form>`;
- editForm.onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);c.fullName=f.get('fullName');c.passport=String(f.get('passport')).toUpperCase();c.dob=f.get('dob');c.age=calcAge(c.dob)+' Years';c.designation=f.get('designation');c.contact=f.get('contact');c.email=f.get('email');c.history.push({date:new Date().toISOString(),text:'Profile updated by '+currentUser.name});persist();closeModal();renderDashboard();showHome()}
+
+ const editCampaigns=campaigns.slice();
+ if(c.campaignNo&&!editCampaigns.some(x=>x.id===c.campaignNo)){
+  editCampaigns.unshift({id:c.campaignNo,name:c.campaignName||'Current Campaign'});
+ }
+
+ const nationalityOptions=['Indian','Pakistani','Bangladeshi','Nepali','Sri Lankan','Filipino','Egyptian','Jordanian','Syrian','Sudanese','Ghanaian','Nigerian','Kenyan','Other'];
+ const qualificationOptions=['Below 10th','10th Pass','12th Pass','ITI','Diploma',"Bachelor's Degree",'Engineering Degree','Trade Certificate','Other'];
+ const passportTypes=['ECR','NECR'];
+ const designationKnown=crafts.includes(c.designation||'');
+
+ modalTitle.textContent='Edit Employee Profile';
+ modalBody.innerHTML=`<form id="editForm"><div class="form-grid">
+  <label>Candidate ID<input name="id" value="${esc(c.id)}" readonly></label>
+  <label>Campaign<select name="campaignNo" required><option value="">Select Campaign</option>${editCampaigns.map(x=>`<option value="${x.id}" ${x.id===c.campaignNo?'selected':''}>${x.id} - ${esc(x.name||'Assigned Campaign')}</option>`).join('')}</select></label>
+  <label>Full Name *<input name="fullName" value="${esc(c.fullName||'')}" required></label>
+  <label>Father's Name<input name="fatherName" value="${esc(c.fatherName||'')}"></label>
+  <label>Date of Birth *<input name="dob" id="editDob" type="date" value="${c.dob||''}" required onchange="editAge.value=calcAge(this.value)+' Years'"></label>
+  <label>Age<input id="editAge" name="age" value="${esc(c.age||'')}" readonly></label>
+  <label>Nationality<select name="nationality" required><option value="">Select Nationality</option>${nationalityOptions.map(x=>`<option ${x===(c.nationality||'')?'selected':''}>${x}</option>`).join('')}</select></label>
+  <label>Passport Number *<input name="passport" value="${esc(c.passport||'')}" required oninput="this.value=this.value.toUpperCase().replace(/\s+/g,'')"></label>
+  <label>Passport Type<select name="passportType" required><option value="">Select Passport Type</option>${passportTypes.map(x=>`<option ${x===(c.passportType||'')?'selected':''}>${x}</option>`).join('')}</select></label>
+  <label>Passport Expiry Date<input name="passportExpiry" type="date" value="${c.passportExpiry||''}"></label>
+  <label>Contact Number<input name="contact" value="${esc(c.contact||'')}"></label>
+  <label>Email<input name="email" type="email" value="${esc(c.email||'')}"></label>
+  <label>Qualification<select name="qualification"><option value="">Select Qualification</option>${qualificationOptions.map(x=>`<option ${x===(c.qualification||'')?'selected':''}>${x}</option>`).join('')}</select></label>
+  <label>Applied Designation<select name="designation" id="editDesignation" onchange="editCustomDesignation.classList.toggle('hidden',this.value!=='ADD_MORE')"><option value="">Select Craft</option>${crafts.map(x=>`<option ${x===(c.designation||'')?'selected':''}>${x}</option>`).join('')}<option value="ADD_MORE" ${designationKnown?'':'selected'}>Add More...</option></select><input id="editCustomDesignation" name="customDesignation" class="${designationKnown?'hidden':''}" value="${designationKnown?'':esc(c.designation||'')}" placeholder="Enter designation"></label>
+  <label>Total Experience<input name="totalExp" type="number" min="0" step="0.1" value="${Number(c.totalExp||0)}"></label>
+  <label>Previous Gulf Experience<input name="gulfExp" type="number" min="0" step="0.1" value="${Number(c.gulfExp||0)}"></label>
+  <label>Current Salary - AED<input name="currentSalary" type="number" min="0" value="${Number(c.currentSalary||0)}"></label>
+  <label>Expected Salary - AED<input name="expectedSalary" type="number" min="0" value="${Number(c.expectedSalary||0)}"></label>
+  <label>Recruitment Agency<input value="${esc(c.agencyName||'')}" readonly></label>
+  <label>Home State<input name="state" value="${esc(c.state||'')}"></label>
+  <label>Home City<input name="city" value="${esc(c.city||'')}"></label>
+ </div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary">Save Changes</button></div></form>`;
+
+ modalBg.classList.remove('hidden');
+
+ editForm.onsubmit=e=>{
+  e.preventDefault();
+  const f=new FormData(e.target);
+  const passport=String(f.get('passport')).trim().toUpperCase();
+
+  if(candidates.some(x=>x.id!==c.id&&String(x.passport||'').toUpperCase()===passport)){
+   alert('Passport already exists for another employee.');
+   return;
+  }
+
+  const camp=campaigns.find(x=>x.id===f.get('campaignNo'));
+  if(!camp){alert('Please select a valid campaign.');return}
+
+  const des=f.get('designation')==='ADD_MORE'
+   ?String(f.get('customDesignation')).trim()
+   :String(f.get('designation')).trim();
+
+  if(!des){alert('Please select or enter a designation.');return}
+
+  c.fullName=String(f.get('fullName')).trim();
+  c.fatherName=f.get('fatherName');
+  c.dob=f.get('dob');
+  c.age=calcAge(c.dob)+' Years';
+  c.nationality=f.get('nationality');
+  c.passport=passport;
+  c.passportType=f.get('passportType');
+  c.passportExpiry=f.get('passportExpiry');
+  c.contact=f.get('contact');
+  c.email=f.get('email');
+  c.qualification=f.get('qualification');
+  c.designation=des;
+  c.totalExp=Number(f.get('totalExp')||0);
+  c.gulfExp=Number(f.get('gulfExp')||0);
+  c.currentSalary=Number(f.get('currentSalary')||0);
+  c.expectedSalary=Number(f.get('expectedSalary')||0);
+  c.campaignNo=camp.id;
+  c.campaignName=camp.name;
+  c.state=f.get('state');
+  c.city=f.get('city');
+  c.history=c.history||[];
+  c.history.push({date:new Date().toISOString(),text:'Complete profile updated by '+currentUser.name});
+
+  persist();
+  closeModal();
+  renderDashboard();
+  showHome();
+  alert('Employee profile updated successfully.');
+ }
 }
 
 function showInterviewWorkspace(){
@@ -1238,7 +1323,80 @@ function showCampaigns(){
 }
 function nextCampaign(){const y=new Date().getFullYear(),n=Math.max(0,...campaigns.filter(c=>c.id.startsWith('CMP-'+y)).map(c=>Number(c.id.split('-').pop())||0))+1;return `CMP-${y}-${String(n).padStart(3,'0')}`}
 function createCampaign(){
- const agencies=users.filter(u=>u.role==='agency'&&u.active),ints=users.filter(u=>u.role==='interviewer'&&u.active);modalTitle.textContent='Create Campaign';modalBody.innerHTML=`<form id="campaignForm"><div class="form-grid"><label>Campaign Number<input name="id" value="${nextCampaign()}" readonly></label><label>Campaign Name<input name="name" required></label><label>Client<input name="client"></label><label>Project<input name="project"></label><label>Assigned Agency<select name="agencyId" required><option value="">Select</option>${agencies.map(u=>`<option value="${u.agencyId}">${esc(u.agencyName)}</option>`).join('')}</select></label><label>Assigned Interviewer<select name="interviewerId" required><option value="">Select</option>${ints.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')}</select></label><label>Status<select name="status"><option>Open</option><option>Closed</option></select></label></div><div class="actions"><button class="btn primary">Create</button></div></form>`;modalBg.classList.remove('hidden');campaignForm.onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),a=users.find(u=>u.agencyId===f.get('agencyId')),i=users.find(u=>u.id===f.get('interviewerId'));campaigns.push({id:f.get('id'),name:f.get('name'),client:f.get('client'),project:f.get('project'),agencyId:a.agencyId,agencyName:a.agencyName,interviewerId:i.id,interviewerName:i.name,status:f.get('status')});persist();closeModal();showCampaigns()}
+ const agencies=users.filter(u=>u.role==='agency'&&u.active),
+       ints=users.filter(u=>u.role==='interviewer'&&u.active);
+
+ modalTitle.textContent='Create Campaign';
+ modalBody.innerHTML=`
+  <form id="campaignForm">
+   <div class="form-grid">
+    <label>Campaign Number
+     <input name="id" value="${nextCampaign()}" readonly>
+    </label>
+    <label>Campaign Name
+     <input name="name" required>
+    </label>
+    <label>Assigned Agency
+     <select name="agencyId" required>
+      <option value="">Select</option>
+      ${agencies.map(u=>`<option value="${u.agencyId}">${esc(u.agencyName)}</option>`).join('')}
+     </select>
+    </label>
+    <label>Assigned Interviewer
+     <select name="interviewerId" required>
+      <option value="">Select</option>
+      <option value="ALL">All Interviewers</option>
+      ${ints.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')}
+     </select>
+    </label>
+    <label>Status
+     <select name="status">
+      <option>Open</option>
+      <option>Closed</option>
+     </select>
+    </label>
+   </div>
+   <div class="actions">
+    <button class="btn primary">Create</button>
+   </div>
+  </form>`;
+
+ modalBg.classList.remove('hidden');
+
+ campaignForm.onsubmit=e=>{
+  e.preventDefault();
+
+  const f=new FormData(e.target);
+  const a=users.find(u=>u.agencyId===f.get('agencyId'));
+  const selectedInterviewer=f.get('interviewerId');
+  const allInterviewers=selectedInterviewer==='ALL';
+  const i=allInterviewers ? null : users.find(u=>u.id===selectedInterviewer);
+
+  if(!a){
+   alert('Please select an agency.');
+   return;
+  }
+  if(!allInterviewers&&!i){
+   alert('Please select an interviewer or All Interviewers.');
+   return;
+  }
+
+  campaigns.push({
+   id:f.get('id'),
+   name:f.get('name'),
+   client:'',
+   project:'',
+   agencyId:a.agencyId,
+   agencyName:a.agencyName,
+   interviewerId:allInterviewers?'':i.id,
+   interviewerName:allInterviewers?'All Interviewers':i.name,
+   status:f.get('status')
+  });
+
+  persist();
+  closeModal();
+  showCampaigns();
+ }
 }
 function toggleCampaign(id){const c=campaigns.find(x=>x.id===id);c.status=c.status==='Open'?'Closed':'Open';persist();showCampaigns()}
 function deleteCampaign(id){const c=campaigns.find(x=>x.id===id),count=candidates.filter(x=>x.campaignNo===id).length;if(!confirm(`Are you sure to delete this campaign?\n\n${id}\nCandidates: ${count}\nThis cannot be undone.`))return;campaigns=campaigns.filter(x=>x.id!==id);candidates=candidates.filter(x=>x.campaignNo!==id);persist();if(dashboardCampaign===id)dashboardCampaign='ALL';refreshDashboardCampaignFilter();showCampaigns();renderDashboard()}
