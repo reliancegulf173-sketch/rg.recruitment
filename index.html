@@ -18,12 +18,12 @@ button,input,select,textarea{font:inherit}.hidden{display:none!important}
 label{display:block;font-size:13px;font-weight:700;margin-top:13px}input,select,textarea{width:100%;padding:10px;border:1px solid #cfd9e7;border-radius:8px;margin-top:6px;background:#fff}
 textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{padding-right:48px}.eye-btn{position:absolute;right:6px;top:9px;width:36px;height:34px;border:0;border-radius:7px;background:#edf3fb;cursor:pointer}
 .remember{display:flex;gap:8px;align-items:center;margin-top:13px}.remember input{width:auto;margin:0}
-.app{display:grid;grid-template-columns:255px 1fr;min-height:100vh}.sidebar{background:linear-gradient(180deg,var(--navy),var(--navy2));color:#fff;position:sticky;top:0;height:100vh;overflow:auto}
+.app{display:grid;grid-template-columns:255px 1fr;min-height:100vh}.sidebar{background:linear-gradient(180deg,var(--navy),var(--navy2));color:#fff;position:sticky;top:0;height:100vh;overflow:auto;z-index:10;pointer-events:auto;isolation:isolate}
 .logo-box{height:105px;background:#fff;display:flex;align-items:center;justify-content:center;padding:10px}.logo-box img{max-width:220px;max-height:85px}
 .role-box{padding:18px;border-bottom:1px solid rgba(255,255,255,.15)}.role-box small{display:block;opacity:.7;margin-bottom:5px}.role-box strong{display:block}
-.nav button{width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:15px 18px;display:flex;gap:12px;align-items:center;font-size:15px}
+.nav button{width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:15px 18px;display:flex;gap:12px;align-items:center;font-size:15px;position:relative;z-index:11;pointer-events:auto;cursor:pointer;touch-action:manipulation}
 .nav button:hover,.nav button.active{background:#2f67ca}.nav .icon{width:22px;font-size:19px}.nav .badge{margin-left:auto;background:#e83838;padding:2px 7px;border-radius:20px;font-size:12px}
-.sidebar-footer{padding:18px}.sidebar-footer button{width:100%;background:rgba(255,255,255,.12);color:white}
+.sidebar-footer{padding:18px;position:relative;z-index:11}.sidebar-footer button{width:100%;background:rgba(255,255,255,.12);color:white;pointer-events:auto;touch-action:manipulation}
 .main{min-width:0}.topbar{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:0 28px;position:sticky;top:0;z-index:5}
 .topbar h1{margin:0;font-size:24px}.top-user{display:flex;align-items:center;gap:12px}.logout-btn{background:#ffe7e7;color:#a52121}
 .content{padding:24px 28px}
@@ -427,14 +427,37 @@ function renderDashboard(){
  recentActivity.innerHTML=events.slice(0,5).map(x=>`<div style="padding:10px 0;border-bottom:1px solid var(--line)"><b>${esc(x.name)}</b><br><small>${esc(x.text)} · ${esc(x.date)}</small></div>`).join('')||'<p style="color:var(--muted)">No activity yet.</p>';
 }
 
+const NAV_ACTIONS={
+ dashboard:()=>showHome(),
+ addCandidate:()=>openAddCandidate(),
+ agencyResults:()=>showAgencyResults(),
+ agencySelected:()=>showAgencySelected(),
+ campaignReports:()=>showCampaignReports(),
+ interviewWorkspace:()=>showInterviewWorkspace(),
+ selectedOps:()=>openOps('selected'),
+ adminSelected:()=>showAdminSelected(),
+ users:()=>showUsers(),
+ campaigns:()=>showCampaigns(),
+ clearTesting:()=>clearTestingData()
+};
 function buildNav(){
- const r=userRole();let items=[['⌂','Dashboard','showHome()']];
- if(r==='agency')items.push(['＋','Add New Employee','openAddCandidate()'],['✅','Interview Results','showAgencyResults()'],['🏆','Selected Employees','showAgencySelected()'],['📊','Campaign Reports','showCampaignReports()']);
- if(r==='interviewer')items.push(['🗓','Manpower Available for Interview','showInterviewWorkspace()'],['🏆','Selected Employees Status',"openOps('selected')"]);
- if(['admin','superuser'].includes(r))items.push(['🏆','Selected Employees','showAdminSelected()'],['📄','Offer Letters','showAdminSelected()']);
- if(r==='superuser')items.push(['⚙','User Management','showUsers()'],['🗂','Campaign Management','showCampaigns()'],['🗑','Clear Testing Data','clearTestingData()']);
- navMenu.innerHTML=items.map((i,idx)=>`<button class="${idx===0?'active':''}" onclick="${i[2]}"><span class="icon">${i[0]}</span>${i[1]}</button>`).join('');
+ const r=userRole();let items=[['⌂','Dashboard','dashboard']];
+ if(r==='agency')items.push(['＋','Add New Employee','addCandidate'],['✅','Interview Results','agencyResults'],['🏆','Selected Employees','agencySelected'],['📊','Campaign Reports','campaignReports']);
+ if(r==='interviewer')items.push(['🗓','Manpower Available for Interview','interviewWorkspace'],['🏆','Selected Employees Status','selectedOps']);
+ if(['admin','superuser'].includes(r))items.push(['🏆','Selected Employees','adminSelected'],['📄','Offer Letters','adminSelected']);
+ if(r==='superuser')items.push(['⚙','User Management','users'],['🗂','Campaign Management','campaigns'],['🗑','Clear Testing Data','clearTesting']);
+ navMenu.innerHTML=items.map((i,idx)=>`<button type="button" class="${idx===0?'active':''}" data-nav-action="${i[2]}"><span class="icon">${i[0]}</span>${i[1]}</button>`).join('');
 }
+function handleNavClick(event){
+ const button=event.target.closest('button[data-nav-action]');
+ if(!button||!navMenu.contains(button))return;
+ event.preventDefault();event.stopPropagation();
+ const action=NAV_ACTIONS[button.dataset.navAction];
+ if(typeof action!=='function')return;
+ navMenu.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===button));
+ try{action()}catch(err){console.error('Navigation error:',err);alert('Page could not open. Please refresh once and try again.');}
+}
+navMenu.addEventListener('click',handleNavClick);
 
 function topDashboardFilteredList(type){
  const list=visibleCandidates();
@@ -1220,7 +1243,7 @@ function createCampaign(){
 function toggleCampaign(id){const c=campaigns.find(x=>x.id===id);c.status=c.status==='Open'?'Closed':'Open';persist();showCampaigns()}
 function deleteCampaign(id){const c=campaigns.find(x=>x.id===id),count=candidates.filter(x=>x.campaignNo===id).length;if(!confirm(`Are you sure to delete this campaign?\n\n${id}\nCandidates: ${count}\nThis cannot be undone.`))return;campaigns=campaigns.filter(x=>x.id!==id);candidates=candidates.filter(x=>x.campaignNo!==id);persist();if(dashboardCampaign===id)dashboardCampaign='ALL';refreshDashboardCampaignFilter();showCampaigns();renderDashboard()}
 
-function clearTestingData(){if(!confirm('Are you sure you want to clear all candidates and campaigns?\nUser accounts will remain.'))return;candidates=[];campaigns=[];persist();renderDashboard();showHome();alert('Testing data cleared.')}
+function clearTestingData(){const typed=prompt('DANGER: This permanently deletes all candidates and campaigns.\nType DELETE TEST DATA to continue:');if(typed!=='DELETE TEST DATA'){if(typed!==null)alert('Nothing was deleted.');return;}candidates=[];campaigns=[];persist();renderDashboard();showHome();alert('Testing data cleared.')}
 
 async function refreshSharedDataFromStorage(){
  try{
@@ -1553,6 +1576,11 @@ if(supabaseClient){
 
 
 function closeModal(){modalBg.classList.add('hidden')}
+
+// Stable interaction safeguards: prevent invisible layers from blocking sidebar clicks.
+modalBg.addEventListener('click',event=>{if(event.target===modalBg)closeModal();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!modalBg.classList.contains('hidden'))closeModal();});
+window.addEventListener('pageshow',()=>{document.body.style.pointerEvents='auto';if(currentUser)navMenu.style.pointerEvents='auto';});
 loginLogo.src=LOGO;sideLogo.src=LOGO;if(!SUPABASE_READY)supabaseConfigWarning.style.display='block';
 restore();
 </script>
