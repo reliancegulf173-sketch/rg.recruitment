@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Reliance Gulf Recruitment Portal V3.0 — Agent Name</small><b>${esc(c.agentName||'')}</b></div><div><small>Date of Entry</title>
+<title>Reliance Gulf Recruitment Portal V3.0</title>
 <style>
 :root{
   --navy:#0b2b4d;--navy2:#164d78;--blue:#2f6fe4;--bg:#f5f8fc;--line:#dfe6ef;
@@ -622,19 +622,50 @@ function openAddCandidate(){
     <label>Applied Designation<select name="designation" id="designation" onchange="customDesignation.classList.toggle('hidden',this.value!=='ADD_MORE')"><option value="">Select Craft</option>${crafts.map(x=>`<option>${x}</option>`).join('')}<option value="ADD_MORE">Add More...</option></select><input id="customDesignation" name="customDesignation" class="hidden" placeholder="Enter designation"></label>
  <label>Total Experience<input name="totalExp" type="number" min="0" step="0.1"></label><label>Previous Gulf Experience<input name="gulfExp" type="number" min="0" step="0.1"></label>
  <label>Current Salary - AED<input name="currentSalary" type="number" min="0"></label><label>Expected Salary - AED<input name="expectedSalary" type="number" min="0"></label>
- <label>Recruitment Agency<input id="candidateAgencyName" value="${isAdmin?'':esc(currentUser.agencyName||'')}" placeholder="${isAdmin?'Select campaign first':''}" readonly></label>
+ <label>Recruitment Agency
+<input
+ id="candidateAgencyName"
+ name="recruitmentAgency"
+ type="text"
+ value="${isAdmin?'':esc(currentUser.agencyName||'')}"
+ placeholder="Type Recruitment Agency Name"
+ autocomplete="off"
+ onfocus="this.removeAttribute('readonly');this.removeAttribute('disabled');"
+ oninput="this.dataset.manual='1';"
+>
+</label>
     <label>Home State<input name="state"></label>
     <label>Home City<input name="city"></label>
  </div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary" ${disabled?'disabled':''}>Save Candidate</button></div></form>`;
  modalBg.classList.remove('hidden');
 
+ const editableAgencyField=document.getElementById('candidateAgencyName');
+ if(editableAgencyField){
+  editableAgencyField.readOnly=false;
+  editableAgencyField.disabled=false;
+  editableAgencyField.removeAttribute('readonly');
+  editableAgencyField.removeAttribute('disabled');
+  editableAgencyField.style.pointerEvents='auto';
+  editableAgencyField.style.background='#fff';
+  editableAgencyField.style.cursor='text';
+ }
+
  window.updateCandidateAgency=function(campaignId){
   const camp=camps.find(c=>c.id===campaignId);
   const agencyInput=document.getElementById('candidateAgencyName');
-  if(agencyInput)agencyInput.value=camp?.agencyName||'';
+  if(agencyInput && agencyInput.dataset.manual!=='1' && !agencyInput.value.trim()){
+   agencyInput.value=camp?.agencyName||'';
+  }
+  if(agencyInput){
+   agencyInput.readOnly=false;
+   agencyInput.disabled=false;
+   agencyInput.style.pointerEvents='auto';
+   agencyInput.style.background='#fff';
+   agencyInput.style.cursor='text';
+  }
  };
 
- candidateForm.onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),passport=String(f.get('passport')).trim().toUpperCase();if(candidates.some(c=>c.passport===passport)){alert('Passport already exists.');return}const camp=camps.find(c=>c.id===f.get('campaignNo'));if(!camp){alert('Invalid campaign.');return}const des=f.get('designation')==='ADD_MORE'?String(f.get('customDesignation')).trim():String(f.get('designation'));if(!des){alert('Please select designation.');return}const agencyId=isAdmin?camp.agencyId:currentUser.agencyId;const agencyName=isAdmin?camp.agencyName:currentUser.agencyName;if(!agencyId||!agencyName){alert('Selected campaign is not linked to an agency.');return}const c={id:f.get('id'),agentName:f.get('agentName'),
+ candidateForm.onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),passport=String(f.get('passport')).trim().toUpperCase();if(candidates.some(c=>c.passport===passport)){alert('Passport already exists.');return}const camp=camps.find(c=>c.id===f.get('campaignNo'));if(!camp){alert('Invalid campaign.');return}const des=f.get('designation')==='ADD_MORE'?String(f.get('customDesignation')).trim():String(f.get('designation'));if(!des){alert('Please select designation.');return}const agencyName=String(f.get('recruitmentAgency')||'').trim();if(!agencyName){alert('Please enter Recruitment Agency Name.');return}const agencyId='';const c={id:f.get('id'),agentName:f.get('agentName'),
       dateOfEntry:todayISO(),fullName:String(f.get('fullName')).trim(),fatherName:f.get('fatherName'),dob:f.get('dob'),age:f.get('age'),nationality:f.get('nationality'),passport,passportType:f.get('passportType'),passportExpiry:f.get('passportExpiry'),contact:f.get('contact'),email:f.get('email'),qualification:f.get('qualification'),designation:des,totalExp:Number(f.get('totalExp')||0),gulfExp:Number(f.get('gulfExp')||0),currentSalary:Number(f.get('currentSalary')||0),expectedSalary:Number(f.get('expectedSalary')||0),agencyId,agencyName,campaignNo:camp.id,campaignName:camp.name,state:f.get('state'),city:f.get('city'),history:[{date:new Date().toISOString(),text:'Candidate added by '+(isAdmin?currentUser.name:agencyName)}]};candidates.unshift(c);persist();closeModal();renderDashboard();showHome();alert('Candidate saved: '+c.id)}
 }
 
