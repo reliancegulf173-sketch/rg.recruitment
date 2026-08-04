@@ -1202,7 +1202,7 @@ function openUserForm(id=''){
    ${userCampaignOptions(u?.campaignAccess||[],u?.allCampaigns!==false)}
   </div>
   </div>
-  <div class="note">For an existing user, leave password blank. Password changes must be handled through Supabase Authentication or password reset.</div>
+  <div class="note">Complete all required information, then click Create User. Pressing Enter will move to the next field and will not close or submit the form.</div>
   <div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button type="submit" class="btn primary">${u?'Save Changes':'Create User'}</button></div></form>`;
 
   modalBgEl.classList.remove('hidden');
@@ -1210,6 +1210,18 @@ function openUserForm(id=''){
 
   const form=document.getElementById('userAccountForm');
   if(!form)throw new Error('User form could not be created.');
+
+  form.addEventListener('keydown',event=>{
+   if(event.key==='Enter' && event.target.tagName!=='TEXTAREA'){
+    event.preventDefault();
+    event.stopPropagation();
+    const fields=[...form.querySelectorAll('input:not([type="hidden"]):not([disabled]),select:not([disabled]),textarea:not([disabled])')]
+      .filter(el=>el.offsetParent!==null);
+    const currentIndex=fields.indexOf(event.target);
+    const nextField=fields[currentIndex+1];
+    if(nextField)nextField.focus();
+   }
+  });
 
   form.onsubmit=async event=>{
    event.preventDefault();
@@ -1777,9 +1789,20 @@ if(supabaseClient){
 
 function closeModal(){modalBg.classList.add('hidden')}
 
-// Stable interaction safeguards: prevent invisible layers from blocking sidebar clicks.
-modalBg.addEventListener('click',event=>{if(event.target===modalBg)closeModal();});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!modalBg.classList.contains('hidden'))closeModal();});
+// Stable interaction safeguards.
+// Forms close only through Cancel, X, or after a successful save.
+modalBg.addEventListener('click',event=>{
+ if(event.target===modalBg){
+  event.preventDefault();
+  event.stopPropagation();
+ }
+});
+document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&!modalBg.classList.contains('hidden')){
+  event.preventDefault();
+  event.stopPropagation();
+ }
+});
 window.addEventListener('pageshow',()=>{
  document.body.style.pointerEvents='auto';
  const menu=document.getElementById('navMenu');
