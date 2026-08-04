@@ -48,7 +48,19 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 .modal-head{display:flex;justify-content:space-between;align-items:center}.modal-head button{border:0;width:36px;height:36px;border-radius:50%;cursor:pointer}.form-grid,.details{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:16px 0}.details>div{background:#f6f8fc;border-radius:8px;padding:12px}.details small{display:block;color:var(--muted);margin-bottom:4px}
 .actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:16px}.timeline{margin-top:18px}.timeline-item{border-left:3px solid var(--blue);padding:0 0 14px 13px}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:18px}.list-box{border:1px solid var(--line);border-radius:10px;max-height:560px;overflow:auto}.list-item{padding:12px;border-bottom:1px solid var(--line);cursor:pointer}.list-item:hover,.list-item.active{background:#eef5ff}.list-item small{display:block;color:var(--muted);margin-top:4px}
-.rating-row{display:grid;grid-template-columns:1fr 170px;gap:10px;align-items:center;margin:9px 0}.progress-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.progress-card{border:1px solid var(--line);border-radius:10px;padding:13px;background:#f8faff}.progress-card.done{background:#ebfaf1;border-color:#8bd5aa}.progress-card .row{display:flex;justify-content:space-between;gap:12px;align-items:center}.progress-card input[type=checkbox]{width:22px;height:22px;margin:0;accent-color:#16a05a}
+.rating-row{display:grid;grid-template-columns:1fr 170px;gap:10px;align-items:center;margin:9px 0}
+.interview-workspace-grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:18px;align-items:start}
+.interview-candidate-layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:18px;align-items:start}
+.candidate-bio-card{position:sticky;top:94px;border:1px solid var(--line);border-radius:12px;background:#fbfcff;padding:16px;max-height:calc(100vh - 120px);overflow:auto}
+.candidate-bio-card h3{margin:0 0 12px;font-size:18px}
+.candidate-bio-section{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.candidate-bio-section h4{margin:0 0 9px;color:var(--navy2)}
+.candidate-bio-row{display:grid;grid-template-columns:115px 1fr;gap:8px;padding:7px 0;border-bottom:1px dashed #e2e8f1;font-size:13px}
+.candidate-bio-row span{color:var(--muted);font-weight:700}
+.candidate-bio-row b{white-space:normal;word-break:break-word}
+.interview-form-card{min-width:0}
+@media(max-width:1250px){.interview-candidate-layout{grid-template-columns:1fr}.candidate-bio-card{position:relative;top:auto;max-height:none}}
+@media(max-width:900px){.interview-workspace-grid{grid-template-columns:1fr}}.progress-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.progress-card{border:1px solid var(--line);border-radius:10px;padding:13px;background:#f8faff}.progress-card.done{background:#ebfaf1;border-color:#8bd5aa}.progress-card .row{display:flex;justify-content:space-between;gap:12px;align-items:center}.progress-card input[type=checkbox]{width:22px;height:22px;margin:0;accent-color:#16a05a}
 .offer{border:1px solid var(--line);border-radius:12px;padding:28px}.offer h1,.offer h2{text-align:center}.offer table td{border:1px solid #d8dee8}
 .note{padding:11px;border-radius:8px;background:#fff5d9;border:1px solid #e6c85e;color:#735800;font-size:13px;margin:12px 0}
 
@@ -825,23 +837,128 @@ function editCandidate(id){
 function showInterviewWorkspace(){
  if(userRole()!=='interviewer'){alert('Interviewer only.');return}
  const interviewerList=visibleCandidates().filter(available);
- mainPanel.innerHTML=`<div class="split"><div><div class="panel-head"><h2>Manpower Available for Interview</h2><span class="tag">${interviewerList.length} Available</span></div><input id="interviewSearch" placeholder="Search by name or passport..." oninput="renderInterviewList()"><div id="interviewList" class="list-box" style="margin-top:12px"></div></div><div id="interviewFormArea"><h2>Candidate Interview</h2><p>Select a candidate from the list.</p></div></div>`;renderInterviewList()
+ mainPanel.innerHTML=`<div class="interview-workspace-grid"><div><div class="panel-head"><h2>Manpower Available for Interview</h2><span class="tag">${interviewerList.length} Available</span></div><input id="interviewSearch" placeholder="Search by name or passport..." oninput="renderInterviewList()"><div id="interviewList" class="list-box" style="margin-top:12px"></div></div><div id="interviewFormArea"><h2>Candidate Interview</h2><p>Select a candidate from the list. Candidate bio data and interview evaluation will open together.</p></div></div>`;renderInterviewList()
 }
 function renderInterviewList(){
  const q=String(interviewSearch.value||'').toLowerCase(),list=visibleCandidates().filter(available).filter(c=>c.fullName.toLowerCase().includes(q)||c.passport.toLowerCase().includes(q));
- interviewList.innerHTML=list.map(c=>`<div class="list-item" onclick="selectForInterview('${c.id}')"><b>${esc(c.fullName)}</b><small>${esc(c.passport)} · ${esc(c.designation)} · ${esc(c.campaignNo)}</small></div>`).join('')||'<div style="padding:20px;color:var(--muted)">No manpower available.</div>'
+ interviewList.innerHTML=list.map(c=>`<div class="list-item" data-candidate-id="${esc(c.id)}" onclick="selectForInterview('${c.id}')"><b>${esc(c.fullName)}</b><small>${esc(c.passport)} · ${esc(c.designation)} · ${esc(c.campaignNo)}</small></div>`).join('')||'<div style="padding:20px;color:var(--muted)">No manpower available.</div>'
 }
 function ratingOptions(){return '<option value="">Select</option><option>Excellent</option><option>Good</option><option>Average</option><option>Poor</option>'}
 function selectForInterview(id){
  const c=candidates.find(x=>x.id===id);if(!c)return;
- interviewFormArea.innerHTML=`<h2>${esc(c.fullName)}</h2><div class="details"><div><small>Passport</small><b>${esc(c.passport)}</b></div><div><small>Designation</small><b>${esc(c.designation)}</b></div><div><small>Agency</small><b>${esc(c.agencyName)}</b></div><div><small>Campaign</small><b>${esc(c.campaignNo)}</b></div></div><form id="interviewForm"><div class="form-grid"><label>Interview Date<input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required></label><label>Interview Type<select name="type" required><option value="">Select</option><option>Physical</option><option>Telephonic</option><option>Video Call</option></select></label><label>Attendance<select name="attendance" required><option value="">Select</option><option>Yes</option><option>No</option></select></label></div>
- <h3>Evaluation</h3>${[['Technical Knowledge','technical'],['Practical Skill','practical'],['Safety Knowledge','safety'],['Communication - English','english'],['Communication - Hindi','hindi']].map(x=>`<div class="rating-row"><label>${x[0]}</label><select name="${x[1]}" required>${ratingOptions()}</select></div>`).join('')}
- <div class="form-grid"><label>Recommended Designation<select name="recommendedDesignation" required><option value="">Select</option>${crafts.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Recommended Salary - AED<input name="salary" type="number" min="0" required></label></div>
- <label>Interview Remarks<textarea name="remarks" required></textarea></label><label>Interview Result<select name="result" required><option value="">Select</option><option>Selected</option><option>Rejected</option><option>Hold</option></select></label>
- <div class="actions"><button class="btn primary">Save Interview</button></div></form>`;
- interviewForm.onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),att=f.get('attendance');c.interview={date:f.get('date'),type:f.get('type'),attendance:att,technical:f.get('technical'),practical:f.get('practical'),safety:f.get('safety'),english:f.get('english'),hindi:f.get('hindi'),recommendedDesignation:f.get('recommendedDesignation'),salary:Number(f.get('salary')||0),remarks:f.get('remarks'),result:att==='No'?'Absent':f.get('result')};c.history.push({date:new Date().toISOString(),text:'Interview result '+c.interview.result+' by '+currentUser.name});persist();renderDashboard();showInterviewWorkspace();alert('Interview saved.')}
-}
 
+ document.querySelectorAll('#interviewList .list-item').forEach(item=>{
+  item.classList.toggle('active',item.dataset.candidateId===String(id));
+ });
+
+ const showValue=value=>{
+  if(value===0)return '0';
+  return value===undefined||value===null||String(value).trim()===''?'—':esc(value);
+ };
+
+ interviewFormArea.innerHTML=`
+ <div class="interview-candidate-layout">
+  <aside class="candidate-bio-card">
+   <h3>👤 Candidate Bio Data</h3>
+
+   <div class="candidate-bio-section">
+    <h4>Personal Information</h4>
+    <div class="candidate-bio-row"><span>Employee Code</span><b>${showValue(c.id)}</b></div>
+    <div class="candidate-bio-row"><span>Full Name</span><b>${showValue(c.fullName)}</b></div>
+    <div class="candidate-bio-row"><span>Father Name</span><b>${showValue(c.fatherName)}</b></div>
+    <div class="candidate-bio-row"><span>Date of Birth</span><b>${showValue(c.dob)}</b></div>
+    <div class="candidate-bio-row"><span>Age</span><b>${showValue(c.age)}</b></div>
+    <div class="candidate-bio-row"><span>Nationality</span><b>${showValue(c.nationality)}</b></div>
+    <div class="candidate-bio-row"><span>Passport</span><b>${showValue(c.passport)}</b></div>
+    <div class="candidate-bio-row"><span>Passport Type</span><b>${showValue(c.passportType)}</b></div>
+    <div class="candidate-bio-row"><span>Passport Expiry</span><b>${showValue(c.passportExpiry)}</b></div>
+    <div class="candidate-bio-row"><span>Mobile</span><b>${showValue(c.contact)}</b></div>
+    <div class="candidate-bio-row"><span>Email</span><b>${showValue(c.email)}</b></div>
+    <div class="candidate-bio-row"><span>Home State</span><b>${showValue(c.state)}</b></div>
+    <div class="candidate-bio-row"><span>Home City</span><b>${showValue(c.city)}</b></div>
+   </div>
+
+   <div class="candidate-bio-section">
+    <h4>Professional Information</h4>
+    <div class="candidate-bio-row"><span>Designation</span><b>${showValue(c.designation)}</b></div>
+    <div class="candidate-bio-row"><span>Qualification</span><b>${showValue(c.qualification)}</b></div>
+    <div class="candidate-bio-row"><span>Total Experience</span><b>${showValue(c.totalExp)} Year(s)</b></div>
+    <div class="candidate-bio-row"><span>Gulf Experience</span><b>${showValue(c.gulfExp)} Year(s)</b></div>
+    <div class="candidate-bio-row"><span>Current Salary</span><b>AED ${showValue(c.currentSalary)}</b></div>
+    <div class="candidate-bio-row"><span>Expected Salary</span><b>AED ${showValue(c.expectedSalary)}</b></div>
+   </div>
+
+   <div class="candidate-bio-section">
+    <h4>Recruitment Information</h4>
+    <div class="candidate-bio-row"><span>Agency</span><b>${showValue(c.agencyName)}</b></div>
+    <div class="candidate-bio-row"><span>Agent Name</span><b>${showValue(c.agentName)}</b></div>
+    <div class="candidate-bio-row"><span>Campaign</span><b>${showValue(c.campaignNo)}</b></div>
+    <div class="candidate-bio-row"><span>Campaign Name</span><b>${showValue(c.campaignName)}</b></div>
+    <div class="candidate-bio-row"><span>Date of Entry</span><b>${showValue(candidateEntryDate(c))}</b></div>
+   </div>
+
+   ${c.interview?.remarks?`
+   <div class="candidate-bio-section">
+    <h4>Previous Interview Note</h4>
+    <div style="font-size:13px;line-height:1.5">${esc(c.interview.remarks)}</div>
+   </div>`:''}
+  </aside>
+
+  <section class="interview-form-card">
+   <div class="panel-head">
+    <div>
+     <h2 style="margin-bottom:4px">${esc(c.fullName)}</h2>
+     <small style="color:var(--muted)">${esc(c.designation)} · ${esc(c.passport)}</small>
+    </div>
+    <span class="tag">${esc(c.campaignNo)}</span>
+   </div>
+
+   <form id="interviewForm">
+    <div class="form-grid">
+     <label>Interview Date<input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required></label>
+     <label>Interview Type<select name="type" required><option value="">Select</option><option>Physical</option><option>Telephonic</option><option>Video Call</option></select></label>
+     <label>Attendance<select name="attendance" required><option value="">Select</option><option>Yes</option><option>No</option></select></label>
+    </div>
+
+    <h3>Evaluation</h3>
+    ${[['Technical Knowledge','technical'],['Practical Skill','practical'],['Safety Knowledge','safety'],['Communication - English','english'],['Communication - Hindi','hindi']].map(x=>`<div class="rating-row"><label>${x[0]}</label><select name="${x[1]}" required>${ratingOptions()}</select></div>`).join('')}
+
+    <div class="form-grid">
+     <label>Recommended Designation<select name="recommendedDesignation" required><option value="">Select</option>${crafts.map(x=>`<option>${x}</option>`).join('')}</select></label>
+     <label>Recommended Salary - AED<input name="salary" type="number" min="0" required></label>
+    </div>
+
+    <label>Interview Remarks<textarea name="remarks" required placeholder="Record technical observations, strengths, weaknesses and suitability..."></textarea></label>
+    <label>Interview Result<select name="result" required><option value="">Select</option><option>Selected</option><option>Rejected</option><option>Hold</option></select></label>
+    <div class="actions"><button class="btn primary">Save Interview</button></div>
+   </form>
+  </section>
+ </div>`;
+
+ interviewForm.onsubmit=e=>{
+  e.preventDefault();
+  const f=new FormData(e.target),att=f.get('attendance');
+  c.interview={
+   date:f.get('date'),
+   type:f.get('type'),
+   attendance:att,
+   technical:f.get('technical'),
+   practical:f.get('practical'),
+   safety:f.get('safety'),
+   english:f.get('english'),
+   hindi:f.get('hindi'),
+   recommendedDesignation:f.get('recommendedDesignation'),
+   salary:Number(f.get('salary')||0),
+   remarks:f.get('remarks'),
+   result:att==='No'?'Absent':f.get('result')
+  };
+  c.history.push({date:new Date().toISOString(),text:'Interview result '+c.interview.result+' by '+currentUser.name});
+  persist();
+  renderDashboard();
+  showInterviewWorkspace();
+  alert('Interview saved.');
+ }
+}
 function showAgencyResults(){
  const list=visibleCandidates().filter(c=>c.interview&&['Selected','Rejected','Hold'].includes(c.interview.result));
  mainPanel.innerHTML=`<div class="panel-head"><h2>Interview Results</h2></div>${candidateTable(list)}`
