@@ -95,6 +95,9 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 .export-excel{color:#147a3d;border-color:#9bcfb0;background:#effaf3}
 .export-pdf{color:#b22828;border-color:#e5aaaa;background:#fff2f2}
 .export-print{color:#175bc4;border-color:#abc4ec;background:#f1f6ff}
+.interview-remarks-cell{min-width:220px;max-width:340px;white-space:normal!important;line-height:1.4}
+.interview-remarks-preview{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.interview-remarks-empty{color:var(--muted)}
 @media print{
  .sidebar,.topbar,.dashboard-filter,.cards,.ops,.grid2,.export-toolbar,.modal-bg{display:none!important}
  .app{display:block!important}.main{display:block!important}.content{padding:0!important}
@@ -560,7 +563,40 @@ function openTopDashboardList(type){
 }
 function showHome(){const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;mainPanel.innerHTML=`<div class="panel-head"><h2>Recent Candidates - ${label}</h2><button class="btn secondary" onclick="showAllCandidates()">View All</button></div>${candidateTable(visibleCandidates().slice(0,8))}`}
 function showAllCandidates(){const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;mainPanel.innerHTML=`<div class="panel-head"><h2>All Candidates - ${label}</h2></div>${candidateTable(visibleCandidates())}`}
-function candidateTable(list){return `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Date of Entry</th><th>Name</th><th>Passport</th><th>Campaign</th><th>Agent Name</th><th>Designation</th><th>Stage</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td><b>${c.id}</b></td><td>${esc(candidateEntryDate(c))}</td><td>${esc(c.fullName)}</td><td>${esc(c.passport)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.designation)}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(stage(c))}</span></td><td><button class="eye" onclick="openCandidate('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">No candidates found.</td></tr>'}</tbody></table></div>`}
+function candidateTable(list){
+ return `<div class="table-wrap"><table>
+  <thead><tr>
+   <th>ID</th>
+   <th>Date of Entry</th>
+   <th>Name</th>
+   <th>Passport</th>
+   <th>Campaign</th>
+   <th>Agent Name</th>
+   <th>Designation</th>
+   <th>Interview Remarks</th>
+   <th>Stage</th>
+   <th>Action</th>
+  </tr></thead>
+  <tbody>${list.map(c=>{
+   const remarks=String(c.interview?.remarks||'').trim();
+   return `<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}">
+    <td><b>${esc(c.id)}</b></td>
+    <td>${esc(candidateEntryDate(c))}</td>
+    <td>${esc(c.fullName)}</td>
+    <td>${esc(c.passport)}</td>
+    <td>${esc(c.campaignNo)}</td>
+    <td>${esc(c.agentName||c.agencyName||'-')}</td>
+    <td>${esc(c.interview?.recommendedDesignation||c.designation||'-')}</td>
+    <td class="interview-remarks-cell" title="${esc(remarks||'No interview remarks')}">
+     ${remarks?`<div class="interview-remarks-preview">${esc(remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}
+    </td>
+    <td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(stage(c))}</span></td>
+    <td><button class="eye" onclick="openCandidate('${c.id}')">⊙</button></td>
+   </tr>`;
+  }).join('')||'<tr><td colspan="10" style="text-align:center;color:var(--muted)">No candidates found.</td></tr>'}
+  </tbody>
+ </table></div>`;
+}
 function stage(c){
  if(c.admin?.visaResult==='Rejected')return 'Visa Rejected';
  if(c.admin?.visaResult==='Received')return c.admin?.ticketBooked?'Ticket Booked':'Visa Received';
@@ -1050,7 +1086,7 @@ function showAgencyResults(){
 }
 function showAgencySelected(){
  const list=visibleCandidates().filter(selected);
- mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Designation</th><th>Salary</th><th>Offer Status</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>AED ${c.interview.salary}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Awaiting Response')}</span></td><td>${esc(agencyProgressLabel(c))}</td><td><button class="eye" onclick="openAgencyProgress('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="7">No selected employees.</td></tr>'}</tbody></table></div>`
+ mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Designation</th><th>Salary</th><th>Interview Remarks</th><th>Offer Status</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>AED ${c.interview.salary}</td><td class="interview-remarks-cell" title="${esc(c.interview?.remarks||'No interview remarks')}">${c.interview?.remarks?`<div class="interview-remarks-preview">${esc(c.interview.remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Awaiting Response')}</span></td><td>${esc(agencyProgressLabel(c))}</td><td><button class="eye" onclick="openAgencyProgress('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="8">No selected employees.</td></tr>'}</tbody></table></div>`
 }
 function agencyProgressLabel(c){const p=c.agencyProgress||{};if(p.travelled)return'Travelled to UAE';if(p.ticket)return'Ticket Booked';if(p.visa)return'Visa Received';if(p.signedOffer)return'Signed Offer Sent Back';if(p.offerReceived)return'Offer Letter Received';return'Pending'}
 function openAgencyProgress(id){
@@ -1285,7 +1321,7 @@ function openInterviewerProgress(id){
 
 function showAdminSelected(){
  const list=candidates.filter(selected);
- mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees - Admin Processing</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Salary</th><th>Offer Response</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>AED ${c.interview.salary}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Pending')}</span></td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="openAdminCandidate('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="9">No selected employees.</td></tr>'}</tbody></table></div>`
+ mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees - Admin Processing</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Salary</th><th>Interview Remarks</th><th>Offer Response</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>AED ${c.interview.salary}</td><td class="interview-remarks-cell" title="${esc(c.interview?.remarks||'No interview remarks')}">${c.interview?.remarks?`<div class="interview-remarks-preview">${esc(c.interview.remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Pending')}</span></td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="openAdminCandidate('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="10">No selected employees.</td></tr>'}</tbody></table></div>`
 }
 function adminLabel(c){
  if(c.admin?.visaResult==='Rejected')return 'Visa Rejected';
