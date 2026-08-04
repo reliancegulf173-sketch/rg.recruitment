@@ -1511,8 +1511,7 @@ function showCampaigns(){
 }
 function nextCampaign(){const y=new Date().getFullYear(),n=Math.max(0,...campaigns.filter(c=>c.id.startsWith('CMP-'+y)).map(c=>Number(c.id.split('-').pop())||0))+1;return `CMP-${y}-${String(n).padStart(3,'0')}`}
 function createCampaign(){
- const agencies=users.filter(u=>u.role==='agency'&&u.active),
-       ints=users.filter(u=>u.role==='interviewer'&&u.active);
+ const ints=users.filter(u=>u.role==='interviewer'&&u.active);
 
  modalTitle.textContent='Create Campaign';
  modalBody.innerHTML=`
@@ -1523,12 +1522,6 @@ function createCampaign(){
     </label>
     <label>Campaign Name
      <input name="name" required>
-    </label>
-    <label>Assigned Agency
-     <select name="agencyId" required>
-      <option value="">Select</option>
-      ${agencies.map(u=>`<option value="${u.agencyId}">${esc(u.agencyName)}</option>`).join('')}
-     </select>
     </label>
     <label>Assigned Interviewer
      <select name="interviewerId" required>
@@ -1555,15 +1548,10 @@ function createCampaign(){
   e.preventDefault();
 
   const f=new FormData(e.target);
-  const a=users.find(u=>u.agencyId===f.get('agencyId'));
   const selectedInterviewer=f.get('interviewerId');
   const allInterviewers=selectedInterviewer==='ALL';
   const i=allInterviewers ? null : users.find(u=>u.id===selectedInterviewer);
 
-  if(!a){
-   alert('Please select an agency.');
-   return;
-  }
   if(!allInterviewers&&!i){
    alert('Please select an interviewer or All Interviewers.');
    return;
@@ -1574,43 +1562,18 @@ function createCampaign(){
    name:f.get('name'),
    client:'',
    project:'',
-   agencyId:a.agencyId,
-   agencyName:a.agencyName,
+   agencyId:'',
+   agencyName:'',
    interviewerId:allInterviewers?'':i.id,
    interviewerName:allInterviewers?'All Interviewers':i.name,
    status:f.get('status')
   };
 
   campaigns.push(newCampaign);
-
-  // Automatically link the campaign to the selected agency.
-  a.allCampaigns=false;
-  a.campaignAccess=Array.from(new Set([...(a.campaignAccess||[]),newCampaign.id]));
-
-  try{
-   await savePortalProfile({
-    fullName:a.name||a.agencyName,
-    userId:a.userId,
-    role:a.role,
-    active:a.active!==false,
-    allCampaigns:false,
-    campaignAccess:a.campaignAccess,
-    agencyName:a.agencyName,
-    agencyId:a.agencyId,
-    entryAllowed:a.entryAllowed!==false
-   },a.authId||a.id);
-  }catch(error){
-   console.error('Agency campaign link sync error:',error);
-   campaigns=campaigns.filter(c=>c.id!==newCampaign.id);
-   a.campaignAccess=(a.campaignAccess||[]).filter(id=>id!==newCampaign.id);
-   alert('Campaign could not be linked to the agency: '+(error.message||error));
-   return;
-  }
-
   persist();
   closeModal();
   showCampaigns();
-  alert('Campaign created and automatically linked to '+a.agencyName+'.');
+  alert('Campaign created successfully.');
  }
 }
 function toggleCampaign(id){const c=campaigns.find(x=>x.id===id);c.status=c.status==='Open'?'Closed':'Open';persist();showCampaigns()}
