@@ -11,7 +11,7 @@
 }
 *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
 button,input,select,textarea{font:inherit}.hidden{display:none!important}
-.btn{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;transition:opacity .15s ease,transform .15s ease}.btn:active{transform:scale(.98)}button.click-locked{pointer-events:none!important;opacity:.65!important}.primary{background:var(--blue);color:#fff}.secondary{background:#e9eef5;color:#20304a}.danger{background:#ffe4e4;color:#a62323}
+.btn{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e9eef5;color:#20304a}.danger{background:#ffe4e4;color:#a62323}
 .login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#08233f,#1d68ac);padding:20px}
 .login-card{width:min(450px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 25px 70px rgba(0,0,0,.28)}
 .login-card img{width:100%;max-height:145px;object-fit:contain}.login-card h1{text-align:center;margin:10px 0 4px}.login-card p{text-align:center;color:var(--muted)}
@@ -87,29 +87,7 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 @media(max-width:1250px){.ops{grid-template-columns:repeat(4,1fr)}}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.grid2,.split{grid-template-columns:1fr}.quick-row{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{height:auto;position:relative}.cards,.ops,.quick-row,.form-grid,.details,.progress-grid{grid-template-columns:1fr}.content{padding:16px}}
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
-// Prevent accidental double-clicks on action and submit buttons.
-document.addEventListener('click',event=>{
- const button=event.target.closest('button');
- if(!button || button.closest('#navMenu')) return;
- if(button.disabled || button.dataset.singleClick==='off') return;
-
- const now=Date.now();
- const last=Number(button.dataset.lastClickAt||0);
- if(now-last<700){
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  return;
- }
- button.dataset.lastClickAt=String(now);
-
- if(button.type==='submit' || button.classList.contains('primary') || button.classList.contains('danger')){
-  button.classList.add('click-locked');
-  setTimeout(()=>button.classList.remove('click-locked'),650);
- }
-},true);
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -470,38 +448,22 @@ function buildNav(){
  if(r==='interviewer')items.push(['🗓','Manpower Available for Interview','interviewWorkspace'],['🏆','Selected Employees Status','selectedOps']);
  if(['admin','superuser'].includes(r))items.push(['🏆','Selected Employees','adminSelected'],['📄','Offer Letters','adminSelected']);
  if(r==='superuser')items.push(['⚙','User Management','users'],['🗂','Campaign Management','campaigns'],['🗑','Clear Testing Data','clearTesting']);
- navMenu.innerHTML=items.map((i,idx)=>`<button type="button" class="${idx===0?'active':''}" data-nav-action="${i[2]}" onclick="runNavAction('${i[2]}',this,event)"><span class="icon">${i[0]}</span>${i[1]}</button>`).join('');
+ navMenu.innerHTML=items.map((i,idx)=>`<button type="button" class="${idx===0?'active':''}" data-nav-action="${i[2]}"><span class="icon">${i[0]}</span>${i[1]}</button>`).join('');
 }
-let lastNavClickAt=0;
-let lastNavActionName='';
 
-function runNavAction(actionName,button,event){
- if(event){event.preventDefault();event.stopPropagation()}
-
- const now=Date.now();
- if(actionName===lastNavActionName && now-lastNavClickAt<700){
-  return false;
- }
- lastNavClickAt=now;
- lastNavActionName=actionName;
-
- const action=NAV_ACTIONS[actionName];
- if(typeof action!=='function')return false;
-
- if(button){
-  button.classList.add('click-locked');
-  setTimeout(()=>button.classList.remove('click-locked'),450);
- }
-
- // Close any invisible/open modal before changing section.
- if(typeof modalBg!=='undefined'&&modalBg&&!modalBg.classList.contains('hidden')){
-  modalBg.classList.add('hidden');
- }
-
+function handleNavClick(event){
+ const button=event.target.closest('button[data-nav-action]');
  const menu=document.getElementById('navMenu');
- if(menu&&button){
-  menu.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===button));
- }
+ if(!button||!menu||!menu.contains(button))return;
+
+ event.preventDefault();
+
+ const action=NAV_ACTIONS[button.dataset.navAction];
+ if(typeof action!=='function')return;
+
+ // Only a real completed click opens a page. Hover, mouse movement,
+ // pointer-down and touch movement do nothing.
+ menu.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===button));
 
  try{
   action();
@@ -509,14 +471,8 @@ function runNavAction(actionName,button,event){
   console.error('Navigation error:',err);
   alert('Page could not open. Please refresh once and try again.');
  }
- return false;
 }
-function handleNavClick(event){
- const button=event.target.closest('button[data-nav-action]');
- if(!button||!document.getElementById('navMenu')?.contains(button))return;
- if(event.defaultPrevented)return;
- runNavAction(button.dataset.navAction,button,event);
-}
+
 document.getElementById('navMenu')?.addEventListener('click',handleNavClick);
 
 function topDashboardFilteredList(type){
