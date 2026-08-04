@@ -11,17 +11,17 @@
 }
 *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
 button,input,select,textarea{font:inherit}.hidden{display:none!important}
-.btn{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e9eef5;color:#20304a}.danger{background:#ffe4e4;color:#a62323}
+.btn{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;transition:opacity .15s ease,transform .15s ease}.btn:active{transform:scale(.98)}button.click-locked{pointer-events:none!important;opacity:.65!important}.primary{background:var(--blue);color:#fff}.secondary{background:#e9eef5;color:#20304a}.danger{background:#ffe4e4;color:#a62323}
 .login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#08233f,#1d68ac);padding:20px}
 .login-card{width:min(450px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 25px 70px rgba(0,0,0,.28)}
 .login-card img{width:100%;max-height:145px;object-fit:contain}.login-card h1{text-align:center;margin:10px 0 4px}.login-card p{text-align:center;color:var(--muted)}
 label{display:block;font-size:13px;font-weight:700;margin-top:13px}input,select,textarea{width:100%;padding:10px;border:1px solid #cfd9e7;border-radius:8px;margin-top:6px;background:#fff}
 textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{padding-right:48px}.eye-btn{position:absolute;right:6px;top:9px;width:36px;height:34px;border:0;border-radius:7px;background:#edf3fb;cursor:pointer}
 .remember{display:flex;gap:8px;align-items:center;margin-top:13px}.remember input{width:auto;margin:0}
-.app{display:grid;grid-template-columns:255px 1fr;min-height:100vh}.sidebar{background:linear-gradient(180deg,var(--navy),var(--navy2));color:#fff;position:sticky;top:0;height:100vh;overflow:auto;z-index:10;pointer-events:auto;isolation:isolate}
+.app{display:grid;grid-template-columns:255px 1fr;min-height:100vh}.sidebar{background:linear-gradient(180deg,var(--navy),var(--navy2));color:#fff;position:sticky;top:0;height:100vh;overflow:auto;z-index:100;pointer-events:auto!important;isolation:isolate}
 .logo-box{height:105px;background:#fff;display:flex;align-items:center;justify-content:center;padding:10px}.logo-box img{max-width:220px;max-height:85px}
 .role-box{padding:18px;border-bottom:1px solid rgba(255,255,255,.15)}.role-box small{display:block;opacity:.7;margin-bottom:5px}.role-box strong{display:block}
-.nav button{width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:15px 18px;display:flex;gap:12px;align-items:center;font-size:15px;position:relative;z-index:11;pointer-events:auto;cursor:pointer;touch-action:manipulation}
+.nav{position:relative;z-index:101;pointer-events:auto!important}.nav button{width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:15px 18px;display:flex;gap:12px;align-items:center;font-size:15px;position:relative;z-index:102;pointer-events:auto!important;cursor:pointer;touch-action:manipulation;user-select:none}
 .nav button:hover,.nav button.active{background:#2f67ca}.nav .icon{width:22px;font-size:19px}.nav .badge{margin-left:auto;background:#e83838;padding:2px 7px;border-radius:20px;font-size:12px}
 .sidebar-footer{padding:18px;position:relative;z-index:11}.sidebar-footer button{width:100%;background:rgba(255,255,255,.12);color:white;pointer-events:auto;touch-action:manipulation}
 .main{min-width:0}.topbar{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:0 28px;position:sticky;top:0;z-index:5}
@@ -87,7 +87,29 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 @media(max-width:1250px){.ops{grid-template-columns:repeat(4,1fr)}}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.grid2,.split{grid-template-columns:1fr}.quick-row{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{height:auto;position:relative}.cards,.ops,.quick-row,.form-grid,.details,.progress-grid{grid-template-columns:1fr}.content{padding:16px}}
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
+// Prevent accidental double-clicks on action and submit buttons.
+document.addEventListener('click',event=>{
+ const button=event.target.closest('button');
+ if(!button || button.closest('#navMenu')) return;
+ if(button.disabled || button.dataset.singleClick==='off') return;
+
+ const now=Date.now();
+ const last=Number(button.dataset.lastClickAt||0);
+ if(now-last<700){
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  return;
+ }
+ button.dataset.lastClickAt=String(now);
+
+ if(button.type==='submit' || button.classList.contains('primary') || button.classList.contains('danger')){
+  button.classList.add('click-locked');
+  setTimeout(()=>button.classList.remove('click-locked'),650);
+ }
+},true);
+
+</script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -448,18 +470,54 @@ function buildNav(){
  if(r==='interviewer')items.push(['🗓','Manpower Available for Interview','interviewWorkspace'],['🏆','Selected Employees Status','selectedOps']);
  if(['admin','superuser'].includes(r))items.push(['🏆','Selected Employees','adminSelected'],['📄','Offer Letters','adminSelected']);
  if(r==='superuser')items.push(['⚙','User Management','users'],['🗂','Campaign Management','campaigns'],['🗑','Clear Testing Data','clearTesting']);
- navMenu.innerHTML=items.map((i,idx)=>`<button type="button" class="${idx===0?'active':''}" data-nav-action="${i[2]}"><span class="icon">${i[0]}</span>${i[1]}</button>`).join('');
+ navMenu.innerHTML=items.map((i,idx)=>`<button type="button" class="${idx===0?'active':''}" data-nav-action="${i[2]}" onclick="runNavAction('${i[2]}',this,event)"><span class="icon">${i[0]}</span>${i[1]}</button>`).join('');
+}
+let lastNavClickAt=0;
+let lastNavActionName='';
+
+function runNavAction(actionName,button,event){
+ if(event){event.preventDefault();event.stopPropagation()}
+
+ const now=Date.now();
+ if(actionName===lastNavActionName && now-lastNavClickAt<700){
+  return false;
+ }
+ lastNavClickAt=now;
+ lastNavActionName=actionName;
+
+ const action=NAV_ACTIONS[actionName];
+ if(typeof action!=='function')return false;
+
+ if(button){
+  button.classList.add('click-locked');
+  setTimeout(()=>button.classList.remove('click-locked'),450);
+ }
+
+ // Close any invisible/open modal before changing section.
+ if(typeof modalBg!=='undefined'&&modalBg&&!modalBg.classList.contains('hidden')){
+  modalBg.classList.add('hidden');
+ }
+
+ const menu=document.getElementById('navMenu');
+ if(menu&&button){
+  menu.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===button));
+ }
+
+ try{
+  action();
+ }catch(err){
+  console.error('Navigation error:',err);
+  alert('Page could not open. Please refresh once and try again.');
+ }
+ return false;
 }
 function handleNavClick(event){
  const button=event.target.closest('button[data-nav-action]');
- if(!button||!navMenu.contains(button))return;
- event.preventDefault();event.stopPropagation();
- const action=NAV_ACTIONS[button.dataset.navAction];
- if(typeof action!=='function')return;
- navMenu.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===button));
- try{action()}catch(err){console.error('Navigation error:',err);alert('Page could not open. Please refresh once and try again.');}
+ if(!button||!document.getElementById('navMenu')?.contains(button))return;
+ if(event.defaultPrevented)return;
+ runNavAction(button.dataset.navAction,button,event);
 }
-navMenu.addEventListener('click',handleNavClick);
+document.getElementById('navMenu')?.addEventListener('click',handleNavClick);
 
 function topDashboardFilteredList(type){
  const list=visibleCandidates();
@@ -1074,12 +1132,16 @@ function toggleAgencyFields(){
  const isAgency=role==='agency';
  document.getElementById('agencyFields')?.classList.toggle('hidden',!isAgency);
 
+ const campaignSection=document.getElementById('userCampaignSection');
+ if(campaignSection)campaignSection.style.display=isAgency?'none':'';
+
  const mode=document.getElementById('userCampaignMode');
  if(mode){
   const allOption=mode.querySelector('option[value="ALL"]');
   if(isAgency){
    mode.value='SELECTED';
    if(allOption)allOption.disabled=true;
+   document.querySelectorAll('#campaignAccessFields input[name="campaignAccess"]').forEach(x=>x.checked=false);
   }else{
    if(allOption)allOption.disabled=false;
   }
@@ -1180,7 +1242,9 @@ function openUserForm(id=''){
    <label>Agency ID *<input name="agencyId" value="${esc(u?.agencyId||'')}" placeholder="AGY-001"></label>
    <label style="grid-column:1/-1"><input type="checkbox" name="entryAllowed" ${u?.entryAllowed!==false?'checked':''} style="width:auto"> Allow Candidate Entry</label>
   </div>
-  ${userCampaignOptions(u?.campaignAccess||[],u?.allCampaigns!==false)}
+  <div id="userCampaignSection" style="grid-column:1/-1">
+   ${userCampaignOptions(u?.campaignAccess||[],u?.allCampaigns!==false)}
+  </div>
   </div>
   <div class="note">For an existing user, leave password blank. Password changes must be handled through Supabase Authentication or password reset.</div>
   <div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button type="submit" class="btn primary">${u?'Save Changes':'Create User'}</button></div></form>`;
@@ -1228,11 +1292,6 @@ function openUserForm(id=''){
    const campaignMode=String(f.get('campaignMode')||'SELECTED');
    const campaignAccess=[...form.querySelectorAll('input[name="campaignAccess"]:checked')].map(input=>input.value);
 
-   if(role==='agency'&&!campaignAccess.length){
-    alert('Please assign at least one campaign to the agency user.');
-    return;
-   }
-
    const payload={
     action:u?'update':'create',
     id:u?.id||null,
@@ -1242,7 +1301,7 @@ function openUserForm(id=''){
     role,
     active:f.get('active')==='true',
     allCampaigns:role==='agency'?false:campaignMode==='ALL',
-    campaignAccess,
+    campaignAccess:role==='agency'?[]:campaignAccess,
     agencyName:role==='agency'?agencyName:null,
     agencyId:role==='agency'?agencyId:null,
     entryAllowed:role==='agency'?f.get('entryAllowed')==='on':true
@@ -1363,7 +1422,7 @@ function createCampaign(){
 
  modalBg.classList.remove('hidden');
 
- campaignForm.onsubmit=e=>{
+ campaignForm.onsubmit=async e=>{
   e.preventDefault();
 
   const f=new FormData(e.target);
@@ -1381,7 +1440,7 @@ function createCampaign(){
    return;
   }
 
-  campaigns.push({
+  const newCampaign={
    id:f.get('id'),
    name:f.get('name'),
    client:'',
@@ -1391,11 +1450,38 @@ function createCampaign(){
    interviewerId:allInterviewers?'':i.id,
    interviewerName:allInterviewers?'All Interviewers':i.name,
    status:f.get('status')
-  });
+  };
+
+  campaigns.push(newCampaign);
+
+  // Automatically link the campaign to the selected agency.
+  a.allCampaigns=false;
+  a.campaignAccess=Array.from(new Set([...(a.campaignAccess||[]),newCampaign.id]));
+
+  try{
+   await savePortalProfile({
+    fullName:a.name||a.agencyName,
+    userId:a.userId,
+    role:a.role,
+    active:a.active!==false,
+    allCampaigns:false,
+    campaignAccess:a.campaignAccess,
+    agencyName:a.agencyName,
+    agencyId:a.agencyId,
+    entryAllowed:a.entryAllowed!==false
+   },a.authId||a.id);
+  }catch(error){
+   console.error('Agency campaign link sync error:',error);
+   campaigns=campaigns.filter(c=>c.id!==newCampaign.id);
+   a.campaignAccess=(a.campaignAccess||[]).filter(id=>id!==newCampaign.id);
+   alert('Campaign could not be linked to the agency: '+(error.message||error));
+   return;
+  }
 
   persist();
   closeModal();
   showCampaigns();
+  alert('Campaign created and automatically linked to '+a.agencyName+'.');
  }
 }
 function toggleCampaign(id){const c=campaigns.find(x=>x.id===id);c.status=c.status==='Open'?'Closed':'Open';persist();showCampaigns()}
@@ -1738,7 +1824,12 @@ function closeModal(){modalBg.classList.add('hidden')}
 // Stable interaction safeguards: prevent invisible layers from blocking sidebar clicks.
 modalBg.addEventListener('click',event=>{if(event.target===modalBg)closeModal();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!modalBg.classList.contains('hidden'))closeModal();});
-window.addEventListener('pageshow',()=>{document.body.style.pointerEvents='auto';if(currentUser)navMenu.style.pointerEvents='auto';});
+window.addEventListener('pageshow',()=>{
+ document.body.style.pointerEvents='auto';
+ const menu=document.getElementById('navMenu');
+ if(menu)menu.style.pointerEvents='auto';
+});
+
 loginLogo.src=LOGO;sideLogo.src=LOGO;if(!SUPABASE_READY)supabaseConfigWarning.style.display='block';
 restore();
 </script>
