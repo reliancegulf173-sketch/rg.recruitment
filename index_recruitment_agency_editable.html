@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reliance Gulf Recruitment Portal V3.0</title>
+<style>
+:root{
+  --navy:#0b2b4d;--navy2:#164d78;--blue:#2f6fe4;--bg:#f5f8fc;--line:#dfe6ef;
+  --text:#0c1833;--muted:#6b7890;--green:#169a50;--orange:#eb7a12;--purple:#6a46d9;--red:#d63636;
+}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}.hidden{display:none!important}
+.btn{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#e9eef5;color:#20304a}.danger{background:#ffe4e4;color:#a62323}
+.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#08233f,#1d68ac);padding:20px}
+.login-card{width:min(450px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 25px 70px rgba(0,0,0,.28)}
+.login-card img{width:100%;max-height:145px;object-fit:contain}.login-card h1{text-align:center;margin:10px 0 4px}.login-card p{text-align:center;color:var(--muted)}
+label{display:block;font-size:13px;font-weight:700;margin-top:13px}input,select,textarea{width:100%;padding:10px;border:1px solid #cfd9e7;border-radius:8px;margin-top:6px;background:#fff}
+textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{padding-right:48px}.eye-btn{position:absolute;right:6px;top:9px;width:36px;height:34px;border:0;border-radius:7px;background:#edf3fb;cursor:pointer}
+.remember{display:flex;gap:8px;align-items:center;margin-top:13px}.remember input{width:auto;margin:0}
+.app{display:grid;grid-template-columns:255px 1fr;min-height:100vh}.sidebar{background:linear-gradient(180deg,var(--navy),var(--navy2));color:#fff;position:sticky;top:0;height:100vh;overflow:auto;z-index:100;pointer-events:auto!important;isolation:isolate}
+.logo-box{height:105px;background:#fff;display:flex;align-items:center;justify-content:center;padding:10px}.logo-box img{max-width:220px;max-height:85px}
+.role-box{padding:18px;border-bottom:1px solid rgba(255,255,255,.15)}.role-box small{display:block;opacity:.7;margin-bottom:5px}.role-box strong{display:block}
+.nav{position:relative;z-index:101;pointer-events:auto!important}.nav button{width:100%;border:0;background:transparent;color:#fff;text-align:left;padding:15px 18px;display:flex;gap:12px;align-items:center;font-size:15px;position:relative;z-index:102;pointer-events:auto!important;cursor:pointer;touch-action:manipulation;user-select:none}
+.nav button:hover,.nav button.active{background:#2f67ca}.nav .icon{width:22px;font-size:19px}.nav .badge{margin-left:auto;background:#e83838;padding:2px 7px;border-radius:20px;font-size:12px}
+.sidebar-footer{padding:18px;position:relative;z-index:11}.sidebar-footer button{width:100%;background:rgba(255,255,255,.12);color:white;pointer-events:auto;touch-action:manipulation}
+.main{min-width:0}.topbar{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:0 28px;position:sticky;top:0;z-index:5}
+.topbar h1{margin:0;font-size:24px}.top-user{display:flex;align-items:center;gap:12px}.logout-btn{background:#ffe7e7;color:#a52121}
+.content{padding:24px 28px}
+.dashboard-filter{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:16px}
+.dashboard-filter label{margin:0;font-size:13px}
+.dashboard-filter select{width:280px;margin:0}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}.card,.panel{background:#fff;border:1px solid var(--line);border-radius:12px}
+.card{padding:16px;display:flex;gap:14px;align-items:center;cursor:pointer;transition:.2s}.card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(20,55,95,.12);border-color:#9db9e5}.card-icon{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:27px}.cblue{background:#e9f1ff}.cgreen{background:#eaf8ef}.corange{background:#fff0df}.cpurple{background:#efeaff}.cred{background:#ffe7e7}
+.designation-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 18px}
+.designation-summary-card{background:#f8faff;border:1px solid var(--line);border-radius:10px;padding:13px}
+.designation-summary-card small{display:block;color:var(--muted);font-weight:700}
+.designation-summary-card strong{display:block;font-size:22px;margin-top:6px}
+@media(max-width:1100px){.designation-summary{grid-template-columns:repeat(2,1fr)}}
+.card small{font-weight:700;color:#46536a}.card strong{display:block;font-size:27px;margin-top:6px}
+.ops{display:grid;grid-template-columns:repeat(7,1fr);gap:14px;margin-top:18px}.ops-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px;cursor:pointer;transition:.2s}
+.ops-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(20,55,95,.12)}.ops-card span{font-size:26px}.ops-card small{display:block;color:var(--muted);font-weight:700;margin-top:10px;line-height:1.35}.ops-card strong{display:block;font-size:25px;margin-top:7px}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-top:18px}.panel{padding:20px}.panel h2{margin:0 0 16px;font-size:18px}
+.process{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.process .step{background:#f8faff;border-radius:10px;padding:18px;text-align:center}.process .step b{font-size:23px;display:block;margin-top:8px}
+.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{padding:12px 10px;border-top:1px solid var(--line);text-align:left;font-size:13px;white-space:nowrap}th{background:#fbfcff;font-size:12px}
+.tag{padding:5px 9px;border-radius:8px;background:#e9f1ff;color:#175bc4}.eye{border:0;background:none;color:#155bd0;font-size:18px;cursor:pointer}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.quick{margin-top:18px}.quick-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.quick-row button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:16px;cursor:pointer;font-weight:700;color:#1750a6}
+.modal-bg{position:fixed;inset:0;background:rgba(2,18,36,.58);display:grid;place-items:center;padding:18px;z-index:20}.modal{width:min(900px,100%);max-height:94vh;overflow:auto;background:#fff;border-radius:14px;padding:22px}
+.modal-head{display:flex;justify-content:space-between;align-items:center}.modal-head button{border:0;width:36px;height:36px;border-radius:50%;cursor:pointer}.form-grid,.details{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:16px 0}.details>div{background:#f6f8fc;border-radius:8px;padding:12px}.details small{display:block;color:var(--muted);margin-bottom:4px}
+.actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:16px}.timeline{margin-top:18px}.timeline-item{border-left:3px solid var(--blue);padding:0 0 14px 13px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:18px}.list-box{border:1px solid var(--line);border-radius:10px;max-height:560px;overflow:auto}.list-item{padding:12px;border-bottom:1px solid var(--line);cursor:pointer}.list-item:hover,.list-item.active{background:#eef5ff}.list-item small{display:block;color:var(--muted);margin-top:4px}
+.rating-row{display:grid;grid-template-columns:1fr 170px;gap:10px;align-items:center;margin:9px 0}.progress-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.progress-card{border:1px solid var(--line);border-radius:10px;padding:13px;background:#f8faff}.progress-card.done{background:#ebfaf1;border-color:#8bd5aa}.progress-card .row{display:flex;justify-content:space-between;gap:12px;align-items:center}.progress-card input[type=checkbox]{width:22px;height:22px;margin:0;accent-color:#16a05a}
+.offer{border:1px solid var(--line);border-radius:12px;padding:28px}.offer h1,.offer h2{text-align:center}.offer table td{border:1px solid #d8dee8}
+.note{padding:11px;border-radius:8px;background:#fff5d9;border:1px solid #e6c85e;color:#735800;font-size:13px;margin:12px 0}
+
+.offer-response-box{margin-top:18px;border:1px solid var(--line);border-radius:12px;padding:16px;background:#fbfcff}
+.offer-response-title{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.offer-choice-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px}
+.offer-choice{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:9px;padding:10px 13px;background:#fff;cursor:pointer}
+.offer-choice input{width:auto;margin:0}
+.profile-rejected{border:2px solid #e23838!important;background:#fff1f1!important}
+.row-rejected{background:#fff0f0!important}
+.tag-rejected{background:#ffe1e1!important;color:#b42323!important}
+.admin-alert-red{padding:12px;border-radius:9px;background:#ffe5e5;border:1px solid #e35b5b;color:#9d1f1f;font-weight:700;margin:12px 0}
+.review-pending{padding:10px;border-radius:8px;background:#fff5d9;border:1px solid #e3c65d;color:#725800;margin-top:10px}
+
+.visa-result-options{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+.visa-result-option{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;padding:10px 13px;background:#fff;cursor:pointer}
+.visa-result-option input{width:auto;margin:0}
+.visa-rejected-card{background:#fff0f0!important;border:2px solid #df3d3d!important}
+.visa-received-card{background:#ebfaf1!important;border-color:#83d2a3!important}
+.visa-alert-red{padding:12px;border-radius:9px;background:#ffe5e5;border:1px solid #e35b5b;color:#9d1f1f;font-weight:700;margin:12px 0}
+.ticket-disabled{opacity:.55;pointer-events:none}
+
+.export-toolbar{display:flex;justify-content:flex-end;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 14px}
+.export-toolbar .export-label{margin-right:auto;color:var(--muted);font-size:13px;font-weight:700}
+.export-btn{border:1px solid var(--line);border-radius:8px;padding:9px 13px;font-weight:700;cursor:pointer;background:#fff}
+.export-excel{color:#147a3d;border-color:#9bcfb0;background:#effaf3}
+.export-pdf{color:#b22828;border-color:#e5aaaa;background:#fff2f2}
+.export-print{color:#175bc4;border-color:#abc4ec;background:#f1f6ff}
+@media print{
+ .sidebar,.topbar,.dashboard-filter,.cards,.ops,.grid2,.export-toolbar,.modal-bg{display:none!important}
+ .app{display:block!important}.main{display:block!important}.content{padding:0!important}
+ .panel{border:0!important;padding:0!important}.table-wrap{overflow:visible!important}
+ table{font-size:10px!important}th,td{white-space:normal!important;padding:6px!important}
+}
+
+@media(max-width:1250px){.ops{grid-template-columns:repeat(4,1fr)}}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.grid2,.split{grid-template-columns:1fr}.quick-row{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{height:auto;position:relative}.cards,.ops,.quick-row,.form-grid,.details,.progress-grid{grid-template-columns:1fr}.content{padding:16px}}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+<body>
+<section id="loginPage" class="login">
+<form class="login-card" onsubmit="login(event)">
+  <img id="loginLogo" alt="Reliance Gulf">
+  <h1>Recruitment Portal V2</h1><p>Authorized users only · Different users can login in separate tabs</p>
+  <label>User ID<input id="loginUser" required></label>
+  <label>Password<div class="password-wrap"><input id="loginPass" type="password" required><button type="button" class="eye-btn" onclick="togglePassword()">👁</button></div></label>
+  <label class="remember"><input id="rememberLogin" type="checkbox"> Remember User ID and Password</label>
+  <button class="btn primary" style="width:100%;margin-top:18px">Login</button><div id="supabaseConfigWarning" class="note" style="margin-top:14px;display:none">Supabase configuration is missing. Add your Project URL and Publishable Key inside this HTML file.</div>
+</form>
+</section>
+
+<div id="app" class="app hidden">
+<aside class="sidebar">
+  <div class="logo-box"><img id="sideLogo" alt="Reliance Gulf"></div>
+  <div class="role-box"><small>Logged in as</small><strong id="roleText"></strong><small style="margin-top:8px;opacity:.65">Portal V3.0 Date Entry</small></div>
+  <div class="nav" id="navMenu"></div>
+  <div class="sidebar-footer"><button class="btn" onclick="logout()">Logout</button></div>
+</aside>
+<main class="main">
+<header class="topbar"><h1 id="pageTitle">Recruitment Dashboard</h1><div class="top-user">Welcome, <strong id="welcomeName"></strong><button class="btn logout-btn" onclick="logout()">Logout</button></div></header>
+<div class="content">
+
+  <section id="dashboardCampaignFilter" class="dashboard-filter">
+    <label>Campaign Filter</label>
+<label>Agent Name<input name="agentName" placeholder="Enter Agent Name"></label>
+    <select id="campaignDashboardSelect" onchange="changeDashboardCampaign(this.value)">
+      <option value="ALL">All Campaigns</option>
+    </select>
+  </section>
+
+  <section class="cards">
+    <div class="card" onclick="openTopDashboardList('total')"><div class="card-icon cblue">👥</div><div><small>Total Candidates</small><strong id="topTotal">0</strong></div></div>
+    <div class="card" onclick="openTopDashboardList('interview')"><div class="card-icon cgreen">🗓</div><div><small>Available for Interview</small><strong id="topInterview">0</strong></div></div>
+    <div class="card" onclick="openTopDashboardList('selected')"><div class="card-icon corange">🏆</div><div><small>Selected</small><strong id="topSelected">0</strong></div></div>
+    <div class="card" onclick="openTopDashboardList('rejected')"><div class="card-icon cred">❌</div><div><small>Rejected</small><strong id="topRejected">0</strong></div></div>
+    <div class="card" onclick="openTopDashboardList('reached')"><div class="card-icon cpurple">✈️</div><div><small>Reached UAE</small><strong id="topReached">0</strong></div></div>
+  </section>
+
+  <section id="opsDashboard" class="ops hidden">
+    <div class="ops-card" onclick="openOps('selected')"><span>🏆</span><small>Total Selected Employees</small><strong id="opsSelected">0</strong></div>
+    <div class="ops-card" onclick="openOps('offerSend')"><span>📤</span><small>Pending Offer Letter Send</small><strong id="opsOfferSend">0</strong></div>
+    <div class="ops-card" onclick="openOps('offerReceive')"><span>✍️</span><small>Pending Signed Offer Received</small><strong id="opsOfferReceive">0</strong></div>
+    <div class="ops-card" onclick="openOps('visa')"><span>🛂</span><small>Pending Visa Applied</small><strong id="opsVisa">0</strong></div>
+    <div class="ops-card" onclick="openOps('ticket')"><span>🎫</span><small>Pending Ticket Booking</small><strong id="opsTicket">0</strong></div>
+    <div class="ops-card" onclick="openOps('travel3')"><span>✈️</span><small>Travelling Within 3 Days</small><strong id="opsTravel3">0</strong></div>
+    <div class="ops-card" onclick="openOps('uaeVisa')"><span>🇦🇪</span><small>Pending UAE Visa Completion</small><strong id="opsUaeVisa">0</strong></div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel"><h2>Recruitment Process Overview</h2><div class="process">
+      <div class="step">Employee Added<b id="pAdded">0</b></div>
+      <div class="step">Interview Pending<b id="pInterview">0</b></div>
+      <div class="step">Selected<b id="pSelected">0</b></div>
+      <div class="step">Reached UAE<b id="pReached">0</b></div>
+    </div></div>
+    <div class="panel"><h2>Recent Activity</h2><div id="recentActivity"></div></div>
+  </section>
+
+  <section id="mainPanel" class="panel quick"></section>
+</div>
+</main>
+</div>
+
+<div id="modalBg" class="modal-bg hidden"><div class="modal"><div class="modal-head"><h2 id="modalTitle"></h2><button onclick="closeModal()">✕</button></div><div id="modalBody"></div></div></div>
+
+<script>
+const LOGO="data:image/jpeg;base64,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";
+const KEYS={users:'rgv2_users',campaigns:'rgv2_campaigns',candidates:'rgv2_candidates',session:'rgv2_session',remember:'rgv2_remember'};
+
+// SUPABASE CONFIGURATION: replace both values from Supabase > Project Settings > API.
+// Publishable/anon key is safe for browser use. NEVER put the service_role key in this HTML.
+const SUPABASE_URL='https://yqscamqwdozpnsqizmny.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_8B1Jg1ql_p0TjkwzeK83Gg_ykS195-a';
+const SUPABASE_READY=SUPABASE_URL.startsWith('https://')&&!SUPABASE_PUBLISHABLE_KEY.startsWith('PASTE_');
+const supabaseClient=SUPABASE_READY?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY):null;
+// V2: isolated client creates a new Auth account without replacing the Super User's session.
+// No service-role/secret key is stored in this HTML.
+const accountSignupClient=SUPABASE_READY?window.supabase.createClient(
+ SUPABASE_URL,
+ SUPABASE_PUBLISHABLE_KEY,
+ {auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}
+):null;
+const DEFAULT_USERS=[];
+let users=[],campaigns=[],candidates=[],currentUser=null,currentOps='selected',dashboardCampaign='ALL';
+let stateSaveTimer=null,stateLoaded=false;
+
+function load(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}}
+function persist(){
+ localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
+ localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
+ if(!supabaseClient||!currentUser||!stateLoaded)return;
+ clearTimeout(stateSaveTimer);
+ stateSaveTimer=setTimeout(savePortalState,300);
+}
+async function loadPortalState(){
+ if(!supabaseClient)return;
+ const {data,error}=await supabaseClient
+  .from('portal_app_state')
+  .select('campaigns,candidates')
+  .eq('state_key','main')
+  .maybeSingle();
+ if(error)throw error;
+ campaigns=Array.isArray(data?.campaigns)?data.campaigns:[];
+ candidates=Array.isArray(data?.candidates)?data.candidates:[];
+ stateLoaded=true;
+ localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
+ localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
+}
+async function savePortalState(){
+ if(!supabaseClient||!currentUser||!stateLoaded)return;
+ const {error}=await supabaseClient.from('portal_app_state').upsert({
+  state_key:'main',
+  campaigns,
+  candidates,
+  updated_by:currentUser.authId||currentUser.id,
+  updated_at:new Date().toISOString()
+ },{onConflict:'state_key'});
+ if(error){
+  console.error('Supabase state save failed:',error);
+  alert('Data could not be saved to Supabase: '+error.message);
+ }
+}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function normId(v){return String(v??'').trim().toUpperCase()}
+function roleLabel(r){return r==='superuser'?'Super User':r==='admin'?'Admin / HR':r==='interviewer'?'Interviewer':'Recruitment Agency'}
+function userRole(){return currentUser?.role||''}
+function togglePassword(){loginPass.type=loginPass.type==='password'?'text':'password'}
+
+function loginEmailFromUserId(userId){
+ return `${String(userId).trim().toLowerCase().replace(/[^a-z0-9._-]/g,'')}@rg-recruitment.local`;
+}
+function profileToPortalUser(p){
+ return {
+  id:p.user_id,
+  authId:p.user_id,
+  profileId:p.id,
+  userId:p.username||'',
+  name:p.full_name,
+  role:p.role,
+  active:p.active,
+  allCampaigns:p.all_campaigns,
+  campaignAccess:Array.isArray(p.campaign_access)?p.campaign_access:[],
+  agencyName:p.agency_name||'',
+  agencyId:p.agency_id||'',
+  entryAllowed:p.entry_allowed!==false
+ };
+}
+async function fetchMyProfile(authId){
+ const {data,error}=await supabaseClient.from('portal_profiles').select('*').eq('user_id',authId).single();
+ if(error)throw error;
+ return profileToPortalUser(data);
+}
+async function loadSupabaseUsers(){
+ if(!supabaseClient||userRole()!=='superuser')return;
+ const {data,error}=await supabaseClient.from('portal_profiles').select('*').order('full_name');
+ if(error)throw error;
+ users=(data||[]).map(profileToPortalUser);
+}
+async function login(e){
+ e.preventDefault();
+ if(!SUPABASE_READY){alert('Supabase is not configured. Open this HTML in a text editor and enter SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.');return}
+ const id=loginUser.value.trim().toUpperCase(),pass=loginPass.value;
+ const submit=e.submitter; if(submit){submit.disabled=true;submit.textContent='Signing in...'}
+ try{
+  let email=loginEmailFromUserId(id);
+  let {data,error}=await supabaseClient.auth.signInWithPassword({email,password:pass});
+  // Compatibility for the first Super User that was created manually in Supabase.
+  if(error&&id==='RELIANCEGULF'){
+   ({data,error}=await supabaseClient.auth.signInWithPassword({email:'admin@reliancegulf.com',password:pass}));
+  }
+  if(error)throw error;
+  const u=await fetchMyProfile(data.user.id);
+  if(!u.active){await supabaseClient.auth.signOut();throw new Error('This user access is closed by Super User.');}
+  currentUser=u;users=[u];
+  if(userRole()==='superuser')await loadSupabaseUsers();
+  await loadPortalState();
+  if(rememberLogin.checked)localStorage.setItem(KEYS.remember,JSON.stringify({userId:id}));else localStorage.removeItem(KEYS.remember);
+  enterApp();
+ }catch(err){alert(err.message||'Invalid User ID or Password');}
+ finally{if(submit){submit.disabled=false;submit.textContent='Login'}}
+}
+async function restore(){
+ const rem=load(KEYS.remember,null);if(rem){loginUser.value=rem.userId||'';rememberLogin.checked=true}
+ if(!SUPABASE_READY)return;
+ try{
+  const {data}=await supabaseClient.auth.getSession();if(!data.session)return;
+  currentUser=await fetchMyProfile(data.session.user.id);if(!currentUser.active){await supabaseClient.auth.signOut();currentUser=null;return}
+  users=[currentUser];if(userRole()==='superuser')await loadSupabaseUsers();await loadPortalState();enterApp();
+ }catch(err){console.error(err);}
+}
+async function logout(){if(!confirm('Are you sure you want to logout?'))return;if(supabaseClient)await supabaseClient.auth.signOut();currentUser=null;users=[];app.classList.add('hidden');loginPage.classList.remove('hidden');loginPass.type='password';loginPass.value=''}
+function enterApp(){loginPage.classList.add('hidden');app.classList.remove('hidden');welcomeName.textContent=currentUser.name;roleText.textContent=currentUser.role==='agency'?currentUser.agencyName:roleLabel(currentUser.role);pageTitle.textContent=(currentUser.role==='agency'?currentUser.agencyName:roleLabel(currentUser.role))+' Dashboard';buildNav();refreshDashboardCampaignFilter();renderDashboard();showHome()}
+
+function baseVisibleCandidates(){
+ let list=candidates;
+ if(userRole()==='agency'){
+  const assignedIds=availableCampaignsForDashboard().map(c=>c.id);
+  list=candidates.filter(c=>assignedIds.map(normId).includes(normId(c.campaignNo)));
+ }
+ if(userRole()!=='agency'&&currentUser?.allCampaigns===false&&Array.isArray(currentUser.campaignAccess)){
+  list=list.filter(c=>currentUser.campaignAccess.includes(c.campaignNo));
+ }
+ if(userRole()==='interviewer'){
+  const allowedCampaignIds=new Set(availableCampaignsForDashboard().map(c=>normId(c.id)));
+  list=list.filter(c=>allowedCampaignIds.has(normId(c.campaignNo)));
+ }
+ return list;
+}
+function visibleCandidates(){
+ const list=baseVisibleCandidates();
+ return dashboardCampaign==='ALL'?list:list.filter(c=>normId(c.campaignNo)===normId(dashboardCampaign));
+}
+function availableCampaignsForDashboard(){
+ const role=userRole();
+ let list=[...campaigns];
+
+ if(role==='agency'){
+  const granted=(Array.isArray(currentUser.campaignAccess)?currentUser.campaignAccess:[])
+   .map(normId).filter(Boolean);
+  const agencyId=normId(currentUser.agencyId);
+
+  let assigned=list.filter(c=>
+   (agencyId && normId(c.agencyId)===agencyId) ||
+   granted.includes(normId(c.id))
+  );
+
+  // Fallback: profile may contain an assigned campaign that has not yet
+  // been copied into portal_app_state. Keep it visible instead of showing nothing.
+  for(const id of granted){
+   if(!assigned.some(c=>normId(c.id)===id)){
+    assigned.push({
+     id,
+     name:'Assigned Campaign',
+     status:'Open',
+     agencyId:currentUser.agencyId||''
+    });
+   }
+  }
+  return assigned;
+ }
+
+ if(role==='interviewer'){
+  list=list.filter(c=>
+   !normId(c.interviewerId) ||
+   normId(c.interviewerId)==='all' ||
+   normId(c.interviewerId)===normId(currentUser.id) ||
+   normId(c.interviewerId)===normId(currentUser.authId) ||
+   (
+    currentUser.allCampaigns===false &&
+    Array.isArray(currentUser.campaignAccess) &&
+    currentUser.campaignAccess.map(normId).includes(normId(c.id))
+   )
+  );
+ }else if(currentUser?.allCampaigns===false && Array.isArray(currentUser.campaignAccess)){
+  const granted=currentUser.campaignAccess.map(normId);
+  list=list.filter(c=>granted.includes(normId(c.id)));
+ }
+
+ return list;
+}
+function refreshDashboardCampaignFilter(){
+ const select=document.getElementById('campaignDashboardSelect');
+ if(!select)return;
+
+ const available=availableCampaignsForDashboard();
+ const current=dashboardCampaign;
+ const isAgency=userRole()==='agency';
+
+ if(isAgency){
+  // Never show "All Campaigns" to an agency.
+  if(!available.length){
+   select.innerHTML='<option value="">No campaign assigned</option>';
+   select.value='';
+   select.disabled=true;
+   dashboardCampaign='';
+   return;
+  }
+
+  select.innerHTML=available
+   .map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name||"Assigned Campaign")}</option>`)
+   .join('');
+
+  if(current&&available.some(c=>c.id===current)){
+   select.value=current;
+  }else{
+   dashboardCampaign=available[0].id;
+   select.value=dashboardCampaign;
+  }
+
+  select.disabled=available.length===1;
+  return;
+ }
+
+ select.innerHTML='<option value="ALL">All Campaigns</option>'+
+  available.map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name||"Assigned Campaign")}</option>`).join('');
+
+ if(current!=='ALL'&&available.some(c=>c.id===current)){
+  select.value=current;
+ }else{
+  dashboardCampaign='ALL';
+  select.value='ALL';
+ }
+ select.disabled=false;
+}
+function changeDashboardCampaign(value){
+ dashboardCampaign=value||'ALL';
+ renderDashboard();
+ showHome();
+}
+function selected(c){return c.interview?.result==='Selected'}
+function available(c){return !c.interview || !['Selected','Rejected','Hold','Absent'].includes(c.interview.result)}
+function bool(v){return v===true}
+function within3(date){if(!date)return false;const d=new Date(date+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);const e=new Date(t);e.setDate(e.getDate()+3);return d>=t&&d<=e}
+
+function adminCounts(){
+ const visible=baseVisibleCandidates();
+ const source=dashboardCampaign==='ALL'?visible:visible.filter(c=>normId(c.campaignNo)===normId(dashboardCampaign));
+ const list=source.filter(selected);
+ return {
+  selected:list,
+  offerSend:list.filter(c=>!bool(c.admin?.offerSent)),
+  offerReceive:list.filter(c=>bool(c.admin?.offerSent)&&!bool(c.admin?.signedOfferReceived)),
+  visa:list.filter(c=>bool(c.admin?.signedOfferReceived)&&!bool(c.admin?.visaApplied)),
+  ticket:list.filter(c=>bool(c.admin?.visaApplied)&&!bool(c.admin?.ticketBooked)),
+  travel3:list.filter(c=>bool(c.admin?.ticketBooked)&&!bool(c.admin?.reachedUAE)&&within3(c.admin?.travelDate)),
+  uaeVisa:list.filter(c=>bool(c.admin?.reachedUAE)&&c.admin?.uaeVisaStatus!=='Completed')
+ };
+}
+function renderDashboard(){
+ refreshDashboardCampaignFilter();
+ const list=visibleCandidates(),ac=adminCounts();
+ topTotal.textContent=list.length;topInterview.textContent=list.filter(available).length;topSelected.textContent=list.filter(selected).length;topRejected.textContent=list.filter(c=>c.interview?.result==='Rejected').length;topReached.textContent=list.filter(c=>bool(c.admin?.reachedUAE)).length;
+ pAdded.textContent=list.filter(c=>!c.interview).length;pInterview.textContent=list.filter(available).length;pSelected.textContent=list.filter(selected).length;pReached.textContent=list.filter(c=>bool(c.admin?.reachedUAE)).length;
+ const opsAllowed=['admin','superuser','interviewer'].includes(userRole());opsDashboard.classList.toggle('hidden',!opsAllowed);
+ if(opsAllowed){opsSelected.textContent=ac.selected.length;opsOfferSend.textContent=ac.offerSend.length;opsOfferReceive.textContent=ac.offerReceive.length;opsVisa.textContent=ac.visa.length;opsTicket.textContent=ac.ticket.length;opsTravel3.textContent=ac.travel3.length;opsUaeVisa.textContent=ac.uaeVisa.length}
+ const events=[];visibleCandidates().forEach(c=>(c.history||[]).slice(-2).forEach(h=>events.push({name:c.fullName,text:h.text,date:h.date})));events.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ recentActivity.innerHTML=events.slice(0,5).map(x=>`<div style="padding:10px 0;border-bottom:1px solid var(--line)"><b>${esc(x.name)}</b><br><small>${esc(x.text)} · ${esc(x.date)}</small></div>`).join('')||'<p style="color:var(--muted)">No activity yet.</p>';
+}
+
+const NAV_ACTIONS={
+ dashboard:()=>showHome(),
+ addCandidate:()=>openAddCandidate(),
+ agencyResults:()=>showAgencyResults(),
+ agencySelected:()=>showAgencySelected(),
+ campaignReports:()=>showCampaignReports(),
+ interviewWorkspace:()=>showInterviewWorkspace(),
+ selectedOps:()=>openOps('selected'),
+ adminSelected:()=>showAdminSelected(),
+ users:()=>showUsers(),
+ campaigns:()=>showCampaigns(),
+ clearTesting:()=>clearTestingData()
+};
+function buildNav(){
+ const r=userRole();let items=[['⌂','Dashboard','dashboard']];
+ if(r==='agency')items.push(['＋','Add New Employee','addCandidate'],['✅','Interview Results','agencyResults'],['🏆','Selected Employees','agencySelected'],['📊','Campaign Reports','campaignReports']);
+ if(r==='interviewer')items.push(['🗓','Manpower Available for Interview','interviewWorkspace'],['🏆','Selected Employees Status','selectedOps']);
+ if(r==='admin')items.push(['＋','Add New Employee','addCandidate']);
+ if(['admin','superuser'].includes(r))items.push(['🏆','Selected Employees','adminSelected'],['📄','Offer Letters','adminSelected']);
+ if(r==='superuser')items.push(['⚙','User Management','users'],['🗂','Campaign Management','campaigns'],['🗑','Clear Testing Data','clearTesting']);
+ navMenu.innerHTML=items.map((i,idx)=>`<button type="button" class="${idx===0?'active':''}" data-nav-action="${i[2]}"><span class="icon">${i[0]}</span>${i[1]}</button>`).join('');
+}
+
+function handleNavClick(event){
+ const button=event.target.closest('button[data-nav-action]');
+ const menu=document.getElementById('navMenu');
+ if(!button||!menu||!menu.contains(button))return;
+
+ event.preventDefault();
+
+ const action=NAV_ACTIONS[button.dataset.navAction];
+ if(typeof action!=='function')return;
+
+ // Only a real completed click opens a page. Hover, mouse movement,
+ // pointer-down and touch movement do nothing.
+ menu.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===button));
+
+ try{
+  action();
+ }catch(err){
+  console.error('Navigation error:',err);
+  alert('Page could not open. Please refresh once and try again.');
+ }
+}
+
+document.getElementById('navMenu')?.addEventListener('click',handleNavClick);
+
+function topDashboardFilteredList(type){
+ const list=visibleCandidates();
+ if(type==='total')return list;
+ if(type==='interview')return list.filter(available);
+ if(type==='selected')return list.filter(selected);
+ if(type==='rejected')return list.filter(c=>c.interview?.result==='Rejected');
+ if(type==='reached')return list.filter(c=>!!c.admin?.reachedUAE);
+ return list;
+}
+function topDashboardTitle(type){
+ return {
+  total:'Total Candidates',
+  interview:'Available for Interview',
+  selected:'Selected Employees',
+  rejected:'Rejected Candidates',
+  reached:'Employees Reached UAE'
+ }[type]||'Candidates';
+}
+
+function candidateDesignation(c){
+ return c.interview?.recommendedDesignation || c.designation || 'Not Specified';
+}
+function designationSummaryData(list){
+ const map={};
+ list.forEach(c=>{
+   const designation=candidateDesignation(c);
+   map[designation]=(map[designation]||0)+1;
+ });
+ return Object.entries(map).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+}
+function designationSummaryHTML(list){
+ const data=designationSummaryData(list);
+ if(!data.length)return '<div class="note">No designation summary available.</div>';
+ return `<div class="designation-summary">${data.map(([designation,count])=>`
+   <div class="designation-summary-card">
+     <small>${esc(designation)}</small>
+     <strong>${count}</strong>
+   </div>`).join('')}</div>`;
+}
+function openTopDashboardList(type){
+ const list=topDashboardFilteredList(type);
+ const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;
+ const title=topDashboardTitle(type)+' - '+label;
+
+ if(type==='selected' && userRole()==='agency'){
+   showAgencySelected();
+   return;
+ }
+ if(type==='selected' && ['admin','superuser'].includes(userRole())){
+   showAdminSelected();
+   return;
+ }
+ if(type==='interview' && userRole()==='interviewer'){
+   showInterviewWorkspace();
+   return;
+ }
+
+ mainPanel.innerHTML=`<div class="panel-head"><h2>${title}</h2><span class="tag">${list.length} Record${list.length===1?'':'s'}</span></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateTable(list)}`;
+ setTimeout(()=>mainPanel.scrollIntoView({behavior:'smooth',block:'start'}),20);
+}
+function showHome(){const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;mainPanel.innerHTML=`<div class="panel-head"><h2>Recent Candidates - ${label}</h2><button class="btn secondary" onclick="showAllCandidates()">View All</button></div>${candidateTable(visibleCandidates().slice(0,8))}`}
+function showAllCandidates(){const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;mainPanel.innerHTML=`<div class="panel-head"><h2>All Candidates - ${label}</h2></div>${candidateTable(visibleCandidates())}`}
+function candidateTable(list){return `<div class="table-wrap"><table><thead><tr><th>ID</th><th>Date of Entry</th><th>Name</th><th>Passport</th><th>Campaign</th><th>Agent Name</th><th>Designation</th><th>Stage</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td><b>${c.id}</b></td><td>${esc(candidateEntryDate(c))}</td><td>${esc(c.fullName)}</td><td>${esc(c.passport)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.designation)}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(stage(c))}</span></td><td><button class="eye" onclick="openCandidate('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">No candidates found.</td></tr>'}</tbody></table></div>`}
+function stage(c){
+ if(c.admin?.visaResult==='Rejected')return 'Visa Rejected';
+ if(c.admin?.visaResult==='Received')return c.admin?.ticketBooked?'Ticket Booked':'Visa Received';
+ if(c.offerResponse?.status==='Accepted')return 'Offer Accepted';
+ if(c.offerResponse?.status==='Rejected')return 'Offer Rejected';
+ if(c.offerResponse?.status==='Negotiation Required')return 'Offer Negotiation';
+ if(c.interview?.result==='Selected')return c.admin?.reachedUAE?'Reached UAE':'Selected';
+ if(c.interview?.result)return c.interview.result;
+ if(c.interview)return 'Interview Pending';
+ return 'Employee Added'
+}
+
+function nextCandidateId(){const n=Math.max(0,...candidates.map(c=>Number(c.id.split('-').pop())||0))+1;return 'EMP-'+String(n).padStart(6,'0')}
+function calcAge(d){if(!d)return'';const dob=new Date(d+'T00:00:00'),t=new Date();let a=t.getFullYear()-dob.getFullYear();const m=t.getMonth()-dob.getMonth();if(m<0||(m===0&&t.getDate()<dob.getDate()))a--;return a}
+function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function candidateEntryDate(c){const raw=c?.dateOfEntry||(c?.history?.[0]?.date||'').slice(0,10);if(!raw)return'-';const parts=String(raw).slice(0,10).split('-');return parts.length===3?parts[2]+'/'+parts[1]+'/'+parts[0]:raw}
+function agencyCampaigns(){return availableCampaignsForDashboard().filter(c=>c.status==='Open')}
+const crafts=['Pipe Fabricator','Pipe Fitter','Structural Fabricator','Structural Fitter','Welder - GTAW/SMAW','Welder - SMAW','Welder - FCAW','Mechanical Technician','Mechanical Foreman','Mechanical Supervisor','Piping Supervisor','Rigger','Rigging Supervisor','Scaffolder','Scaffolding Supervisor','Millwright Fitter','Equipment Fitter','Valve Technician','Machinist','Grinder','Helper'];
+
+function openAddCandidate(){
+ const role=userRole();
+ if(!['agency','admin'].includes(role)){alert('Only Agency or Admin users can add employees.');return}
+ if(role==='agency'&&currentUser.entryAllowed===false){alert('Candidate entry is closed by Super User.');return}
+
+ const isAdmin=role==='admin';
+ const camps=(isAdmin?campaigns:agencyCampaigns()).filter(c=>c.status==='Open');
+ const disabled=!camps.length;
+ modalTitle.textContent='Add New Employee';
+ modalBody.innerHTML=`${disabled?'<div class="note">No open campaign assigned. Super User must create and assign a campaign first.</div>':''}<form id="candidateForm"><div class="form-grid">
+ <label>Candidate ID<input name="id" value="${nextCandidateId()}" readonly></label>
+ <label>Date of Entry<input name="dateOfEntry" type="date" value="${todayISO()}" readonly></label>
+ <label>Campaign<select name="campaignNo" id="candidateCampaignSelect" ${disabled?'disabled':''} required onchange="updateCandidateAgency(this.value)"><option value="">Select Campaign</option>${camps.map(c=>`<option value="${c.id}">${c.id} - ${esc(c.name||"Assigned Campaign")}</option>`).join('')}</select></label>
+ <label>Full Name *<input name="fullName" required></label><label>Father's Name<input name="fatherName"></label>
+ <label>Date of Birth *<input name="dob" id="dob" type="date" required onchange="age.value=calcAge(this.value)+' Years'"></label><label>Age<input id="age" name="age" readonly></label>
+ <label>Nationality
+      <select name="nationality" required>
+        <option value="">Select Nationality</option>
+        <option>Indian</option>
+        <option>Pakistani</option>
+        <option>Bangladeshi</option>
+        <option>Nepali</option>
+        <option>Sri Lankan</option>
+        <option>Filipino</option>
+        <option>Egyptian</option>
+        <option>Jordanian</option>
+        <option>Syrian</option>
+        <option>Sudanese</option>
+        <option>Ghanaian</option>
+        <option>Nigerian</option>
+        <option>Kenyan</option>
+        <option>Other</option>
+      </select>
+    </label><label>Passport Number *<input name="passport" required oninput="this.value=this.value.toUpperCase().replace(/\\s+/g,'')"></label>
+    <label>Passport Type
+      <select name="passportType" required>
+        <option value="">Select Passport Type</option>
+        <option>ECR</option>
+        <option>NECR</option>
+      </select>
+    </label>
+ <label>Passport Expiry Date<input name="passportExpiry" type="date"></label><label>Contact Number<input name="contact"></label>
+ <label>Email<input name="email" type="email"></label>
+    <label>Qualification
+      <select name="qualification">
+        <option value="">Select Qualification</option>
+        <option>Below 10th</option>
+        <option>10th Pass</option>
+        <option>12th Pass</option>
+        <option>ITI</option>
+        <option>Diploma</option>
+        <option>Bachelor's Degree</option>
+        <option>Engineering Degree</option>
+        <option>Trade Certificate</option>
+        <option>Other</option>
+      </select>
+    </label>
+    <label>Applied Designation<select name="designation" id="designation" onchange="customDesignation.classList.toggle('hidden',this.value!=='ADD_MORE')"><option value="">Select Craft</option>${crafts.map(x=>`<option>${x}</option>`).join('')}<option value="ADD_MORE">Add More...</option></select><input id="customDesignation" name="customDesignation" class="hidden" placeholder="Enter designation"></label>
+ <label>Total Experience<input name="totalExp" type="number" min="0" step="0.1"></label><label>Previous Gulf Experience<input name="gulfExp" type="number" min="0" step="0.1"></label>
+ <label>Current Salary - AED<input name="currentSalary" type="number" min="0"></label><label>Expected Salary - AED<input name="expectedSalary" type="number" min="0"></label>
+ <label>Recruitment Agency<input id="candidateAgencyName" name="recruitmentAgency" value="${isAdmin?'':esc(currentUser.agencyName||'')}" placeholder="Enter Recruitment Agency Name"></label>
+    <label>Home State<input name="state"></label>
+    <label>Home City<input name="city"></label>
+ </div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary" ${disabled?'disabled':''}>Save Candidate</button></div></form>`;
+ modalBg.classList.remove('hidden');
+
+ window.updateCandidateAgency=function(campaignId){
+  const camp=camps.find(c=>c.id===campaignId);
+  const agencyInput=document.getElementById('candidateAgencyName');
+  if(agencyInput && !agencyInput.value.trim()) agencyInput.value=camp?.agencyName||'';
+ };
+
+ candidateForm.onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),passport=String(f.get('passport')).trim().toUpperCase();if(candidates.some(c=>c.passport===passport)){alert('Passport already exists.');return}const camp=camps.find(c=>c.id===f.get('campaignNo'));if(!camp){alert('Invalid campaign.');return}const des=f.get('designation')==='ADD_MORE'?String(f.get('customDesignation')).trim():String(f.get('designation'));if(!des){alert('Please select designation.');return}const agencyName=String(f.get('recruitmentAgency')||'').trim();if(!agencyName){alert('Please enter Recruitment Agency Name.');return}const agencyId='';const c={id:f.get('id'),agentName:f.get('agentName'),
+      dateOfEntry:todayISO(),fullName:String(f.get('fullName')).trim(),fatherName:f.get('fatherName'),dob:f.get('dob'),age:f.get('age'),nationality:f.get('nationality'),passport,passportType:f.get('passportType'),passportExpiry:f.get('passportExpiry'),contact:f.get('contact'),email:f.get('email'),qualification:f.get('qualification'),designation:des,totalExp:Number(f.get('totalExp')||0),gulfExp:Number(f.get('gulfExp')||0),currentSalary:Number(f.get('currentSalary')||0),expectedSalary:Number(f.get('expectedSalary')||0),agencyId,agencyName,campaignNo:camp.id,campaignName:camp.name,state:f.get('state'),city:f.get('city'),history:[{date:new Date().toISOString(),text:'Candidate added by '+(isAdmin?currentUser.name:agencyName)}]};candidates.unshift(c);persist();closeModal();renderDashboard();showHome();alert('Candidate saved: '+c.id)}
+}
+
+function openCandidate(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ const canEdit=userRole()==='agency'&&!c.interview||['admin','superuser','interviewer'].includes(userRole());
+ const canDelete=userRole()==='superuser';
+ modalTitle.textContent=c.fullName+' - '+c.id;
+ modalBody.innerHTML=`<div class="details"><div><small>Date of Entry</small><b>${esc(candidateEntryDate(c))}</b></div><div><small>Passport</small><b>${esc(c.passport)}</b></div><div><small>Campaign</small><b>${esc(c.campaignNo)}</b></div><div><small>Agency</small><b>${esc(c.agencyName)}</b></div><div><small>Designation</small><b>${esc(c.designation)}</b></div><div><small>Stage</small><b>${esc(stage(c))}</b></div><div><small>Age</small><b>${esc(c.age)}</b></div></div>${(canEdit||canDelete)?`<div class="actions">${canEdit?`<button class="btn secondary" onclick="editCandidate('${c.id}')">Edit Profile</button>`:''}${canDelete?`<button class="btn danger" onclick="deleteEmployee('${c.id}')">Delete Employee</button>`:''}</div>`:''}<div class="timeline"><h3>History</h3>${(c.history||[]).slice().reverse().map(h=>`<div class="timeline-item"><b>${esc(h.text)}</b><br><small>${new Date(h.date).toLocaleString()}</small></div>`).join('')}</div>`;
+ modalBg.classList.remove('hidden');
+}
+async function deleteEmployee(id){
+ if(userRole()!=='superuser'){
+  alert('Only Super User can delete an employee.');
+  return;
+ }
+
+ const employee=candidates.find(x=>x.id===id);
+ if(!employee){
+  alert('Employee record not found.');
+  return;
+ }
+
+ const firstConfirm=confirm(
+  `Are you sure you want to delete this employee?\n\n`+
+  `Employee: ${employee.fullName}\n`+
+  `Employee ID: ${employee.id}\n`+
+  `Passport: ${employee.passport||'-'}\n\n`+
+  `This action will permanently remove the employee record.`
+ );
+ if(!firstConfirm)return;
+
+ const typed=prompt(
+  `FINAL CONFIRMATION\n\nType DELETE to permanently delete ${employee.fullName}.`
+ );
+ if(typed!=='DELETE'){
+  if(typed!==null)alert('Employee was not deleted.');
+  return;
+ }
+
+ const originalCandidates=candidates.slice();
+ candidates=candidates.filter(x=>x.id!==id);
+
+ try{
+  localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
+
+  if(supabaseClient&&currentUser&&stateLoaded){
+   clearTimeout(stateSaveTimer);
+   await savePortalState();
+  }
+
+  closeModal();
+  renderDashboard();
+  showHome();
+  alert('Employee deleted successfully.');
+ }catch(error){
+  candidates=originalCandidates;
+  localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
+  console.error('Employee delete failed:',error);
+  alert('Employee could not be deleted: '+(error.message||error));
+ }
+}
+
+function editCandidate(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ if(userRole()==='agency'&&c.interview){alert('Agency can edit only before interview.');return}
+
+ const editCampaigns=campaigns.slice();
+ if(c.campaignNo&&!editCampaigns.some(x=>x.id===c.campaignNo)){
+  editCampaigns.unshift({id:c.campaignNo,name:c.campaignName||'Current Campaign'});
+ }
+
+ const nationalityOptions=['Indian','Pakistani','Bangladeshi','Nepali','Sri Lankan','Filipino','Egyptian','Jordanian','Syrian','Sudanese','Ghanaian','Nigerian','Kenyan','Other'];
+ const qualificationOptions=['Below 10th','10th Pass','12th Pass','ITI','Diploma',"Bachelor's Degree",'Engineering Degree','Trade Certificate','Other'];
+ const passportTypes=['ECR','NECR'];
+ const designationKnown=crafts.includes(c.designation||'');
+
+ modalTitle.textContent='Edit Employee Profile';
+ modalBody.innerHTML=`<form id="editForm"><div class="form-grid">
+  <label>Candidate ID<input name="id" value="${esc(c.id)}" readonly></label>
+  <label>Date of Entry<input name="dateOfEntry" type="date" value="${c.dateOfEntry||(c.history?.[0]?.date||'').slice(0,10)}" readonly></label>
+  <label>Campaign<select name="campaignNo" required><option value="">Select Campaign</option>${editCampaigns.map(x=>`<option value="${x.id}" ${x.id===c.campaignNo?'selected':''}>${x.id} - ${esc(x.name||'Assigned Campaign')}</option>`).join('')}</select></label>
+  <label>Full Name *<input name="fullName" value="${esc(c.fullName||'')}" required></label>
+  <label>Father's Name<input name="fatherName" value="${esc(c.fatherName||'')}"></label>
+  <label>Date of Birth *<input name="dob" id="editDob" type="date" value="${c.dob||''}" required onchange="editAge.value=calcAge(this.value)+' Years'"></label>
+  <label>Age<input id="editAge" name="age" value="${esc(c.age||'')}" readonly></label>
+  <label>Nationality<select name="nationality" required><option value="">Select Nationality</option>${nationalityOptions.map(x=>`<option ${x===(c.nationality||'')?'selected':''}>${x}</option>`).join('')}</select></label>
+  <label>Passport Number *<input name="passport" value="${esc(c.passport||'')}" required oninput="this.value=this.value.toUpperCase().replace(/\s+/g,'')"></label>
+  <label>Passport Type<select name="passportType" required><option value="">Select Passport Type</option>${passportTypes.map(x=>`<option ${x===(c.passportType||'')?'selected':''}>${x}</option>`).join('')}</select></label>
+  <label>Passport Expiry Date<input name="passportExpiry" type="date" value="${c.passportExpiry||''}"></label>
+  <label>Contact Number<input name="contact" value="${esc(c.contact||'')}"></label>
+  <label>Email<input name="email" type="email" value="${esc(c.email||'')}"></label>
+  <label>Qualification<select name="qualification"><option value="">Select Qualification</option>${qualificationOptions.map(x=>`<option ${x===(c.qualification||'')?'selected':''}>${x}</option>`).join('')}</select></label>
+  <label>Applied Designation<select name="designation" id="editDesignation" onchange="editCustomDesignation.classList.toggle('hidden',this.value!=='ADD_MORE')"><option value="">Select Craft</option>${crafts.map(x=>`<option ${x===(c.designation||'')?'selected':''}>${x}</option>`).join('')}<option value="ADD_MORE" ${designationKnown?'':'selected'}>Add More...</option></select><input id="editCustomDesignation" name="customDesignation" class="${designationKnown?'hidden':''}" value="${designationKnown?'':esc(c.designation||'')}" placeholder="Enter designation"></label>
+  <label>Total Experience<input name="totalExp" type="number" min="0" step="0.1" value="${Number(c.totalExp||0)}"></label>
+  <label>Previous Gulf Experience<input name="gulfExp" type="number" min="0" step="0.1" value="${Number(c.gulfExp||0)}"></label>
+  <label>Current Salary - AED<input name="currentSalary" type="number" min="0" value="${Number(c.currentSalary||0)}"></label>
+  <label>Expected Salary - AED<input name="expectedSalary" type="number" min="0" value="${Number(c.expectedSalary||0)}"></label>
+  <label>Recruitment Agency<input value="${esc(c.agencyName||'')}" readonly></label>
+  <label>Home State<input name="state" value="${esc(c.state||'')}"></label>
+  <label>Home City<input name="city" value="${esc(c.city||'')}"></label>
+ </div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary">Save Changes</button></div></form>`;
+
+ modalBg.classList.remove('hidden');
+
+ editForm.onsubmit=e=>{
+  e.preventDefault();
+  const f=new FormData(e.target);
+  const passport=String(f.get('passport')).trim().toUpperCase();
+
+  if(candidates.some(x=>x.id!==c.id&&String(x.passport||'').toUpperCase()===passport)){
+   alert('Passport already exists for another employee.');
+   return;
+  }
+
+  const camp=campaigns.find(x=>x.id===f.get('campaignNo'));
+  if(!camp){alert('Please select a valid campaign.');return}
+
+  const des=f.get('designation')==='ADD_MORE'
+   ?String(f.get('customDesignation')).trim()
+   :String(f.get('designation')).trim();
+
+  if(!des){alert('Please select or enter a designation.');return}
+
+  c.dateOfEntry=c.dateOfEntry||(c.history?.[0]?.date||todayISO()).slice(0,10);
+  c.fullName=String(f.get('fullName')).trim();
+  c.fatherName=f.get('fatherName');
+  c.dob=f.get('dob');
+  c.age=calcAge(c.dob)+' Years';
+  c.nationality=f.get('nationality');
+  c.passport=passport;
+  c.passportType=f.get('passportType');
+  c.passportExpiry=f.get('passportExpiry');
+  c.contact=f.get('contact');
+  c.email=f.get('email');
+  c.qualification=f.get('qualification');
+  c.designation=des;
+  c.totalExp=Number(f.get('totalExp')||0);
+  c.gulfExp=Number(f.get('gulfExp')||0);
+  c.currentSalary=Number(f.get('currentSalary')||0);
+  c.expectedSalary=Number(f.get('expectedSalary')||0);
+  c.campaignNo=camp.id;
+  c.campaignName=camp.name;
+  c.state=f.get('state');
+  c.city=f.get('city');
+  c.history=c.history||[];
+  c.history.push({date:new Date().toISOString(),text:'Complete profile updated by '+currentUser.name});
+
+  persist();
+  closeModal();
+  renderDashboard();
+  showHome();
+  alert('Employee profile updated successfully.');
+ }
+}
+
+function showInterviewWorkspace(){
+ if(userRole()!=='interviewer'){alert('Interviewer only.');return}
+ const interviewerList=visibleCandidates().filter(available);
+ mainPanel.innerHTML=`<div class="split"><div><div class="panel-head"><h2>Manpower Available for Interview</h2><span class="tag">${interviewerList.length} Available</span></div><input id="interviewSearch" placeholder="Search by name or passport..." oninput="renderInterviewList()"><div id="interviewList" class="list-box" style="margin-top:12px"></div></div><div id="interviewFormArea"><h2>Candidate Interview</h2><p>Select a candidate from the list.</p></div></div>`;renderInterviewList()
+}
+function renderInterviewList(){
+ const q=String(interviewSearch.value||'').toLowerCase(),list=visibleCandidates().filter(available).filter(c=>c.fullName.toLowerCase().includes(q)||c.passport.toLowerCase().includes(q));
+ interviewList.innerHTML=list.map(c=>`<div class="list-item" onclick="selectForInterview('${c.id}')"><b>${esc(c.fullName)}</b><small>${esc(c.passport)} · ${esc(c.designation)} · ${esc(c.campaignNo)}</small></div>`).join('')||'<div style="padding:20px;color:var(--muted)">No manpower available.</div>'
+}
+function ratingOptions(){return '<option value="">Select</option><option>Excellent</option><option>Good</option><option>Average</option><option>Poor</option>'}
+function selectForInterview(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ interviewFormArea.innerHTML=`<h2>${esc(c.fullName)}</h2><div class="details"><div><small>Passport</small><b>${esc(c.passport)}</b></div><div><small>Designation</small><b>${esc(c.designation)}</b></div><div><small>Agency</small><b>${esc(c.agencyName)}</b></div><div><small>Campaign</small><b>${esc(c.campaignNo)}</b></div></div><form id="interviewForm"><div class="form-grid"><label>Interview Date<input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required></label><label>Interview Type<select name="type" required><option value="">Select</option><option>Physical</option><option>Telephonic</option><option>Video Call</option></select></label><label>Attendance<select name="attendance" required><option value="">Select</option><option>Yes</option><option>No</option></select></label></div>
+ <h3>Evaluation</h3>${[['Technical Knowledge','technical'],['Practical Skill','practical'],['Safety Knowledge','safety'],['Communication - English','english'],['Communication - Hindi','hindi']].map(x=>`<div class="rating-row"><label>${x[0]}</label><select name="${x[1]}" required>${ratingOptions()}</select></div>`).join('')}
+ <div class="form-grid"><label>Recommended Designation<select name="recommendedDesignation" required><option value="">Select</option>${crafts.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Recommended Salary - AED<input name="salary" type="number" min="0" required></label></div>
+ <label>Interview Remarks<textarea name="remarks" required></textarea></label><label>Interview Result<select name="result" required><option value="">Select</option><option>Selected</option><option>Rejected</option><option>Hold</option></select></label>
+ <div class="actions"><button class="btn primary">Save Interview</button></div></form>`;
+ interviewForm.onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),att=f.get('attendance');c.interview={date:f.get('date'),type:f.get('type'),attendance:att,technical:f.get('technical'),practical:f.get('practical'),safety:f.get('safety'),english:f.get('english'),hindi:f.get('hindi'),recommendedDesignation:f.get('recommendedDesignation'),salary:Number(f.get('salary')||0),remarks:f.get('remarks'),result:att==='No'?'Absent':f.get('result')};c.history.push({date:new Date().toISOString(),text:'Interview result '+c.interview.result+' by '+currentUser.name});persist();renderDashboard();showInterviewWorkspace();alert('Interview saved.')}
+}
+
+function showAgencyResults(){
+ const list=visibleCandidates().filter(c=>c.interview&&['Selected','Rejected','Hold'].includes(c.interview.result));
+ mainPanel.innerHTML=`<div class="panel-head"><h2>Interview Results</h2></div>${candidateTable(list)}`
+}
+function showAgencySelected(){
+ const list=visibleCandidates().filter(selected);
+ mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Designation</th><th>Salary</th><th>Offer Status</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>AED ${c.interview.salary}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Awaiting Response')}</span></td><td>${esc(agencyProgressLabel(c))}</td><td><button class="eye" onclick="openAgencyProgress('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="7">No selected employees.</td></tr>'}</tbody></table></div>`
+}
+function agencyProgressLabel(c){const p=c.agencyProgress||{};if(p.travelled)return'Travelled to UAE';if(p.ticket)return'Ticket Booked';if(p.visa)return'Visa Received';if(p.signedOffer)return'Signed Offer Sent Back';if(p.offerReceived)return'Offer Letter Received';return'Pending'}
+function openAgencyProgress(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ c.agencyProgress=c.agencyProgress||{};
+ c.offerResponse=c.offerResponse||{};
+ const offerSent=!!c.admin?.offerSent;
+ const response=c.offerResponse.status||'';
+ modalTitle.textContent=c.fullName+' - Recruitment Progress';
+ modalBody.innerHTML=`
+ <div class="details">
+  <div><small>Candidate ID</small><b>${c.id}</b></div>
+  <div><small>Passport</small><b>${esc(c.passport)}</b></div>
+  <div><small>Selected Designation</small><b>${esc(c.interview?.recommendedDesignation||c.designation)}</b></div>
+  <div><small>Recommended Salary</small><b>AED ${c.interview?.salary||0}</b></div>
+ </div>
+
+ <div class="offer-response-box ${response==='Rejected'?'profile-rejected':''}">
+  <div class="offer-response-title">
+   <h3 style="margin:0">Employee Offer Letter Status</h3>
+   <span class="tag ${response==='Rejected'?'tag-rejected':''}">${esc(response||'Pending')}</span>
+  </div>
+
+  <label class="offer-choice" style="margin-top:14px">
+   <input id="offerLetterReceivedCheck" type="checkbox" ${c.offerResponse.received?'checked':''} ${offerSent?'':'disabled'} onchange="toggleOfferResponseSection('${c.id}',this.checked)">
+   OFFER LETTER RECEIVED
+  </label>
+
+  ${!offerSent?'<div class="note">Admin has not marked the Offer Letter as Sent yet.</div>':''}
+
+  <div id="offerResponseOptions" class="${c.offerResponse.received?'':'hidden'}">
+   <div class="offer-choice-row">
+    ${offerRadio('Accepted',response)}
+    ${offerRadio('Rejected',response)}
+    ${offerRadio('Negotiation Required',response)}
+   </div>
+
+   <div id="acceptedFields" class="${response==='Accepted'?'':'hidden'}">
+    <div class="note">Acceptance date will be saved automatically when submitted.</div>
+   </div>
+
+   <div id="rejectedFields" class="${response==='Rejected'?'':'hidden'}">
+    <label>Rejection Reason *<textarea id="rejectionReason">${esc(c.offerResponse.rejectionReason||'')}</textarea></label>
+   </div>
+
+   <div id="negotiationFields" class="${response==='Negotiation Required'?'':'hidden'}">
+    <div class="form-grid">
+      <label>Requested Salary<input id="requestedSalary" type="number" min="0" value="${c.offerResponse.requestedSalary||''}"></label>
+      <label>Requested Benefits / Conditions<textarea id="requestedBenefits">${esc(c.offerResponse.requestedBenefits||'')}</textarea></label>
+    </div>
+    <label>Negotiation Remarks<textarea id="negotiationRemarks">${esc(c.offerResponse.negotiationRemarks||'')}</textarea></label>
+    <label>Agency Comments<textarea id="agencyComments">${esc(c.offerResponse.agencyComments||'')}</textarea></label>
+    ${c.offerResponse.superUserReviewStatus?`<div class="review-pending"><b>Super User Review:</b> ${esc(c.offerResponse.superUserReviewStatus)}</div>`:''}
+   </div>
+
+   <div class="actions">
+    <button class="btn primary" onclick="saveOfferResponse('${c.id}')">${response==='Negotiation Required'?'Submit for Super User Review':'Save Offer Response'}</button>
+   </div>
+  </div>
+ </div>
+
+ ${c.admin?.visaResult==='Rejected'?`<div class="visa-alert-red">⚠ VISA REJECTED<br>Reason: ${esc(c.admin.visaRejectionReason||'-')}</div>`:''}
+ ${c.admin?.visaResult==='Received'?`<div class="note" style="background:#ebfaf1;border-color:#83d2a3;color:#08783d"><b>✅ Visa Received</b><br>Visa Type: ${esc(c.admin.visaType||'-')}<br>Visa Number: ${esc(c.admin.visaNumber||'-')}<br>Visa Expiry: ${esc(c.admin.visaExpiryDate||'-')}</div>`:''}
+ <h3>Recruitment Progress</h3>
+ <div class="progress-grid">
+ ${[['offerReceived','📄','Offer Letter Received'],['signedOffer','✍️','Signed Offer Letter Sent Back'],['visa','🛂','Visa Received'],['ticket','🎫','Ticket Booked'],['travelled','✈️','Travelled to UAE']].map(x=>`<div class="progress-card ${c.agencyProgress[x[0]]?'done':''}"><div class="row"><b>${x[1]} ${x[2]}</b><input type="checkbox" ${c.agencyProgress[x[0]]?'checked':''} onchange="updateAgencyProgress('${c.id}','${x[0]}',this.checked,'${x[2]}')"></div></div>`).join('')}
+ </div>`;
+ modalBg.classList.remove('hidden')
+}
+function offerRadio(value,current){
+ const id='offer-'+value.replace(/\s+/g,'-');
+ return `<label class="offer-choice"><input type="radio" name="offerDecision" id="${id}" value="${value}" ${current===value?'checked':''} onchange="changeOfferDecision('${value}')">${value}</label>`
+}
+function toggleOfferResponseSection(id,checked){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ c.offerResponse=c.offerResponse||{};
+ c.offerResponse.received=checked;
+ c.agencyProgress=c.agencyProgress||{};
+ c.agencyProgress.offerReceived=checked;
+ if(!checked){
+   c.offerResponse.status='';
+   c.offerResponse.acceptanceDate='';
+   c.offerResponse.rejectionReason='';
+   c.offerResponse.negotiationRemarks='';
+   c.offerResponse.requestedSalary='';
+   c.offerResponse.requestedBenefits='';
+   c.offerResponse.agencyComments='';
+   c.offerResponse.superUserReviewStatus='';
+ }
+ persist();
+ openAgencyProgress(id);
+ renderDashboard();
+}
+function changeOfferDecision(value){
+ ['acceptedFields','rejectedFields','negotiationFields'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
+ if(value==='Accepted')document.getElementById('acceptedFields')?.classList.remove('hidden');
+ if(value==='Rejected')document.getElementById('rejectedFields')?.classList.remove('hidden');
+ if(value==='Negotiation Required')document.getElementById('negotiationFields')?.classList.remove('hidden');
+}
+function saveOfferResponse(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ const decision=document.querySelector('input[name="offerDecision"]:checked')?.value;
+ if(!c.offerResponse?.received){alert('Please check Offer Letter Received first.');return}
+ if(!decision){alert('Please select Accepted, Rejected or Negotiation Required.');return}
+
+ c.offerResponse=c.offerResponse||{};
+ c.offerResponse.status=decision;
+ c.offerResponse.updatedDate=new Date().toISOString();
+
+ if(decision==='Accepted'){
+   c.offerResponse.acceptanceDate=new Date().toISOString();
+   c.offerResponse.rejectionReason='';
+   c.offerResponse.superUserReviewStatus='';
+   c.history.push({date:new Date().toISOString(),text:'Offer accepted by candidate through '+currentUser.agencyName});
+ }
+
+ if(decision==='Rejected'){
+   const reason=String(document.getElementById('rejectionReason')?.value||'').trim();
+   if(!reason){alert('Rejection Reason is mandatory.');return}
+   c.offerResponse.rejectionReason=reason;
+   c.offerResponse.acceptanceDate='';
+   c.offerResponse.superUserReviewStatus='';
+   c.history.push({date:new Date().toISOString(),text:'Offer rejected by candidate. Reason: '+reason});
+ }
+
+ if(decision==='Negotiation Required'){
+   c.offerResponse.negotiationRemarks=String(document.getElementById('negotiationRemarks')?.value||'').trim();
+   c.offerResponse.requestedSalary=Number(document.getElementById('requestedSalary')?.value||0);
+   c.offerResponse.requestedBenefits=String(document.getElementById('requestedBenefits')?.value||'').trim();
+   c.offerResponse.agencyComments=String(document.getElementById('agencyComments')?.value||'').trim();
+   c.offerResponse.superUserReviewStatus='Pending Review';
+   c.offerResponse.acceptanceDate='';
+   c.history.push({date:new Date().toISOString(),text:'Offer negotiation submitted for Super User review by '+currentUser.agencyName});
+ }
+
+ persist();
+ renderDashboard();
+ openAgencyProgress(id);
+ alert(decision==='Negotiation Required'?'Negotiation submitted for Super User review.':'Offer response saved successfully.');
+}
+function updateAgencyProgress(id,field,val,label){
+ const c=candidates.find(x=>x.id===id);c.agencyProgress=c.agencyProgress||{};
+ c.agencyProgress[field]=val;
+ c.history.push({date:new Date().toISOString(),text:label+' marked '+(val?'Completed':'Pending')+' by '+currentUser.agencyName});
+ persist();openAgencyProgress(id);renderDashboard()
+}
+
+function progressStatusItem(icon,label,done,detail=''){
+ return `<div class="progress-card ${done?'done':''}">
+  <div class="row"><b>${icon} ${label}</b><span style="font-weight:700;color:${done?'var(--green)':'var(--muted)'}">${done?'Completed':'Pending'}</span></div>
+  ${detail?`<small style="display:block;margin-top:9px;color:var(--muted);line-height:1.5">${detail}</small>`:''}
+ </div>`;
+}
+
+function openInterviewerProgress(id){
+ if(userRole()!=='interviewer'){
+  alert('Interviewer access only.');
+  return;
+ }
+
+ const c=candidates.find(x=>x.id===id);
+ if(!c)return;
+
+ const a=c.admin||{};
+ const offer=c.offerResponse||{};
+ const agency=c.agencyProgress||{};
+ const interview=c.interview||{};
+
+ const visaReceived=a.visaResult==='Received';
+ const visaRejected=a.visaResult==='Rejected';
+
+ modalTitle.textContent=c.fullName+' - Complete Recruitment Progress';
+ modalBody.innerHTML=`
+  ${visaRejected?`<div class="visa-alert-red">⚠ VISA REJECTED<br>Reason: ${esc(a.visaRejectionReason||'-')}<br>Remarks: ${esc(a.visaRejectionRemarks||'-')}</div>`:''}
+  ${offer.status==='Rejected'?`<div class="admin-alert-red">⚠ OFFER REJECTED<br>Reason: ${esc(offer.rejectionReason||'-')}</div>`:''}
+
+  <div class="details">
+   <div><small>Candidate ID</small><b>${esc(c.id)}</b></div>
+   <div><small>Passport</small><b>${esc(c.passport||'-')}</b></div>
+   <div><small>Agency</small><b>${esc(c.agencyName||'-')}</b></div>
+   <div><small>Campaign</small><b>${esc(c.campaignNo||'-')}</b></div>
+   <div><small>Selected Designation</small><b>${esc(interview.recommendedDesignation||c.designation||'-')}</b></div>
+   <div><small>Recommended Salary</small><b>AED ${Number(interview.salary||0)}</b></div>
+   <div><small>Interview Result</small><b>${esc(interview.result||'Pending')}</b></div>
+   <div><small>Interview Date</small><b>${esc(interview.date||'-')}</b></div>
+  </div>
+
+  <h3>Complete Recruitment Progress</h3>
+  <div class="progress-grid">
+   ${progressStatusItem('📤','Offer Letter Sent',!!a.offerSent,a.offerSent?'Marked sent by Admin':'Waiting for Admin')}
+   ${progressStatusItem('📥','Offer Letter Received by Employee',!!offer.received,offer.received?`Response: ${esc(offer.status||'Pending')}`:'Awaiting employee/agency confirmation')}
+   ${progressStatusItem('✅','Offer Accepted',offer.status==='Accepted',offer.status?`Current response: ${esc(offer.status)}`:'No response recorded')}
+   ${progressStatusItem('✍️','Signed Offer Letter Received',!!a.signedOfferReceived,a.signedOfferReceived?'Signed copy received by Admin':agency.signedOffer?'Agency marked signed offer sent back':'Pending')}
+   ${progressStatusItem('🛂','Visa Applied',!!a.visaApplied,a.visaApplied?`Visa Type: ${esc(a.visaType||'-')}`:'Not applied')}
+   ${progressStatusItem(
+      visaRejected?'❌':'✅',
+      visaRejected?'Visa Rejected':'Visa Received',
+      visaReceived||visaRejected,
+      visaReceived
+       ?`Visa No: ${esc(a.visaNumber||'-')}<br>Issue Date: ${esc(a.visaIssueDate||'-')}<br>Expiry Date: ${esc(a.visaExpiryDate||'-')}<br>Entry Valid Until: ${esc(a.entryValidUntil||'-')}`
+       :visaRejected
+        ?`Reason: ${esc(a.visaRejectionReason||'-')}`
+        :'Visa result pending'
+    )}
+   ${progressStatusItem('🎫','Ticket Booked',!!a.ticketBooked,a.ticketBooked?`Travel Date: ${esc(a.travelDate||'-')}`:'Ticket not booked')}
+   ${progressStatusItem('✈️','Reached UAE',!!a.reachedUAE,a.reachedUAE?'Employee reached UAE':'Travel pending')}
+   ${progressStatusItem('🇦🇪','UAE Visa Process',a.uaeVisaStatus==='Completed',`Status: ${esc(a.uaeVisaStatus||'Not Started')}`)}
+  </div>
+
+  ${offer.status==='Negotiation Required'?`
+   <div class="review-pending" style="margin-top:16px">
+    <b>Offer Negotiation Details</b><br>
+    Requested Salary: AED ${Number(offer.requestedSalary||0)}<br>
+    Benefits/Conditions: ${esc(offer.requestedBenefits||'-')}<br>
+    Remarks: ${esc(offer.negotiationRemarks||'-')}<br>
+    Super User Review: ${esc(offer.superUserReviewStatus||'Pending')}
+   </div>`:''}
+
+  <h3 style="margin-top:20px">Activity History</h3>
+  <div class="timeline">
+   ${(c.history||[]).slice().reverse().map(h=>`
+    <div class="timeline-item">
+     <b>${esc(h.text)}</b><br>
+     <small>${new Date(h.date).toLocaleString()}</small>
+    </div>`).join('')||'<p style="color:var(--muted)">No activity history available.</p>'}
+  </div>
+
+  <div class="note">This is a read-only progress view. Interviewer can see all recruitment stages but cannot change Admin or Agency processing.</div>`;
+
+ modalBg.classList.remove('hidden');
+}
+
+function showAdminSelected(){
+ const list=candidates.filter(selected);
+ mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees - Admin Processing</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Salary</th><th>Offer Response</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>AED ${c.interview.salary}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Pending')}</span></td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="openAdminCandidate('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="9">No selected employees.</td></tr>'}</tbody></table></div>`
+}
+function adminLabel(c){
+ if(c.admin?.visaResult==='Rejected')return 'Visa Rejected';
+ if(c.admin?.visaResult==='Received'&&!c.admin?.ticketBooked)return 'Visa Received';
+ if(c.offerResponse?.status==='Rejected')return 'Offer Rejected';
+ if(c.offerResponse?.status==='Negotiation Required')return 'Negotiation Pending';
+ if(c.offerResponse?.status==='Accepted'&&!c.admin?.signedOfferReceived)return 'Offer Accepted';
+ const a=c.admin||{};
+ if(a.reachedUAE)return a.uaeVisaStatus==='Completed'?'UAE Visa Completed':'Reached UAE';
+ if(a.ticketBooked)return 'Ticket Booked';
+ if(a.visaApplied)return 'Visa Applied';
+ if(a.signedOfferReceived)return 'Signed Offer Received';
+ if(a.offerSent)return 'Offer Letter Sent';
+ return 'Offer Pending'
+}
+function openAdminCandidate(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;c.admin=c.admin||{};
+ modalTitle.textContent=c.fullName+' - Admin Processing';modalBody.innerHTML=`${c.admin?.visaResult==='Rejected'?`<div class="visa-alert-red">⚠ VISA APPLICATION REJECTED<br>Reason: ${esc(c.admin.visaRejectionReason||'-')}</div>`:''}${c.offerResponse?.status==='Rejected'?`<div class="admin-alert-red">⚠ EMPLOYEE HAS REJECTED THE OFFER LETTER<br>Reason: ${esc(c.offerResponse.rejectionReason||'-')}</div>`:''}${c.offerResponse?.status==='Negotiation Required'?`<div class="review-pending"><b>Negotiation Required</b><br>Requested Salary: AED ${c.offerResponse.requestedSalary||0}<br>Benefits/Conditions: ${esc(c.offerResponse.requestedBenefits||'-')}<br>Remarks: ${esc(c.offerResponse.negotiationRemarks||'-')}<br>Agency Comments: ${esc(c.offerResponse.agencyComments||'-')}</div>`:''}<div class="details"><div><small>Candidate ID</small><b>${c.id}</b></div><div><small>Passport</small><b>${esc(c.passport)}</b></div><div><small>Agency</small><b>${esc(c.agencyName)}</b></div><div><small>Selected Designation</small><b>${esc(c.interview.recommendedDesignation)}</b></div><div><small>Salary</small><b>AED ${c.interview.salary}</b></div></div>${userRole()==='superuser'&&c.offerResponse?.status==='Negotiation Required'?`<div class="actions"><button class="btn primary" onclick="reviewNegotiation('${c.id}','Approved')">Approve Negotiation</button><button class="btn danger" onclick="reviewNegotiation('${c.id}','Rejected')">Reject Negotiation</button></div>`:''}<form id="adminForm"><div class="progress-grid">
+ ${adminCheck('offerSent','📤 Offer Letter Sent',c.admin.offerSent)}
+ ${adminCheck('signedOfferReceived','✍️ Signed Offer Letter Received',c.admin.signedOfferReceived)}
+ <div id="visaAppliedCard" class="progress-card ${c.admin.visaResult==='Rejected'?'visa-rejected-card':c.admin.visaResult==='Received'?'visa-received-card':c.admin.visaApplied?'done':''}">
+   <div class="row"><b>🛂 Visa Applied</b><input name="visaApplied" type="checkbox" ${c.admin.visaApplied?'checked':''} onchange="toggleVisaAppliedFields(this.checked)"></div>
+   <label>Visa Type<select name="visaType" id="adminVisaType" ${c.admin.visaApplied?'':'disabled'}><option value="">Select</option><option ${c.admin.visaType==='Visit'?'selected':''}>Visit</option><option ${c.admin.visaType==='Employment'?'selected':''}>Employment</option></select></label>
+   <div id="visaResultArea" class="${c.admin.visaApplied?'':'hidden'}">
+    <b style="display:block;margin-top:13px">Visa Result</b>
+    <div class="visa-result-options">
+      <label class="visa-result-option"><input type="radio" name="visaResult" value="Received" ${c.admin.visaResult==='Received'?'checked':''} onchange="changeVisaResult('Received')"> Visa Received</label>
+      <label class="visa-result-option"><input type="radio" name="visaResult" value="Rejected" ${c.admin.visaResult==='Rejected'?'checked':''} onchange="changeVisaResult('Rejected')"> Visa Rejected</label>
+    </div>
+    <div id="visaReceivedFields" class="${c.admin.visaResult==='Received'?'':'hidden'}"><div class="form-grid">
+      <label>Visa Issue Date<input name="visaIssueDate" type="date" value="${c.admin.visaIssueDate||''}"></label>
+      <label>Visa Expiry Date<input name="visaExpiryDate" type="date" value="${c.admin.visaExpiryDate||''}"></label>
+      <label>Visa Number<input name="visaNumber" value="${esc(c.admin.visaNumber||'')}"></label>
+      <label>Emirates Entry Valid Until<input name="entryValidUntil" type="date" value="${c.admin.entryValidUntil||''}"></label>
+    </div></div>
+    <div id="visaRejectedFields" class="${c.admin.visaResult==='Rejected'?'':'hidden'}">
+      <label>Visa Rejection Reason *<textarea name="visaRejectionReason">${esc(c.admin.visaRejectionReason||'')}</textarea></label>
+      <label>Visa Rejection Remarks<textarea name="visaRejectionRemarks">${esc(c.admin.visaRejectionRemarks||'')}</textarea></label>
+    </div>
+   </div>
+ </div>
+ <div id="ticketBookingCard" class="progress-card ${c.admin.ticketBooked?'done':''} ${c.admin.visaResult==='Received'?'':'ticket-disabled'}">
+   <div class="row"><b>🎫 Ticket Booked</b><input name="ticketBooked" id="ticketBookedCheck" type="checkbox" ${c.admin.ticketBooked?'checked':''} ${c.admin.visaResult==='Received'?'':'disabled'}></div>
+   <label>Travelling Date<input name="travelDate" id="travelDateInput" type="date" value="${c.admin.travelDate||''}" ${c.admin.visaResult==='Received'?'':'disabled'} onchange="autoCheckTicketBooked(this.value)"></label>
+   ${c.admin.visaResult!=='Received'?'<div class="note">Ticket booking will be enabled after Visa Received.</div>':''}
+ </div>
+ ${adminCheck('reachedUAE','✈️ Reached in UAE',c.admin.reachedUAE)}
+ <div class="progress-card ${c.admin.uaeVisaStatus==='Completed'?'done':''}"><b>🇦🇪 In UAE Visa Process</b><label>Status<select name="uaeVisaStatus"><option value="">Select</option><option ${c.admin.uaeVisaStatus==='Under Process'?'selected':''}>Under Process</option><option ${c.admin.uaeVisaStatus==='Completed'?'selected':''}>Completed</option></select></label></div>
+ </div><div class="actions"><button type="button" class="btn secondary" onclick="generateOffer('${c.id}')">Generate Offer Letter</button><button class="btn primary">Save Progress</button></div></form>`;
+ modalBg.classList.remove('hidden');adminForm.onsubmit=e=>{
+ e.preventDefault();
+ const f=new FormData(e.target);
+ const visa=f.get('visaApplied')==='on';
+ const visaResult=String(f.get('visaResult')||'');
+ const travelDateValue=String(f.get('travelDate')||'');
+ let ticket=f.get('ticketBooked')==='on'||!!travelDateValue;
+ if(visa&&!f.get('visaType')){alert('Select Visa Type');return}
+ if(visa&&!visaResult){alert('Select Visa Received or Visa Rejected.');return}
+ if(visaResult==='Rejected'){
+   const reason=String(f.get('visaRejectionReason')||'').trim();
+   if(!reason){alert('Visa Rejection Reason is mandatory.');return}
+   ticket=false;
+ }
+ if(visaResult==='Received'){
+   if(!f.get('visaIssueDate')){alert('Select Visa Issue Date.');return}
+   if(!f.get('visaExpiryDate')){alert('Select Visa Expiry Date.');return}
+ }
+ if(ticket&&!travelDateValue){alert('Please select Travelling Date.');return}
+ const previousVisaResult=c.admin?.visaResult||'';
+ c.admin={
+   offerSent:f.get('offerSent')==='on',
+   signedOfferReceived:f.get('signedOfferReceived')==='on',
+   visaApplied:visa,
+   visaType:f.get('visaType'),
+   visaResult:visa?visaResult:'',
+   visaIssueDate:visaResult==='Received'?f.get('visaIssueDate'):'',
+   visaExpiryDate:visaResult==='Received'?f.get('visaExpiryDate'):'',
+   visaNumber:visaResult==='Received'?String(f.get('visaNumber')||'').trim():'',
+   entryValidUntil:visaResult==='Received'?f.get('entryValidUntil'):'',
+   visaRejectionReason:visaResult==='Rejected'?String(f.get('visaRejectionReason')||'').trim():'',
+   visaRejectionRemarks:visaResult==='Rejected'?String(f.get('visaRejectionRemarks')||'').trim():'',
+   ticketBooked:visaResult==='Received'?ticket:false,
+   travelDate:visaResult==='Received'&&ticket?travelDateValue:'',
+   reachedUAE:f.get('reachedUAE')==='on',
+   uaeVisaStatus:f.get('uaeVisaStatus')
+ };
+ if(previousVisaResult!==visaResult&&visaResult){
+   c.history.push({date:new Date().toISOString(),text:visaResult==='Received'?'Visa received and updated by '+currentUser.name:'Visa application rejected. Reason: '+c.admin.visaRejectionReason});
+ }else{
+   c.history.push({date:new Date().toISOString(),text:'Admin progress updated by '+currentUser.name});
+ }
+ persist();renderDashboard();showAdminSelected();closeModal();alert('Progress saved.');
+}
+}
+function autoCheckTicketBooked(dateValue){
+ const check=document.getElementById('ticketBookedCheck');
+ if(!check)return;
+ if(dateValue){
+   check.checked=true;
+ }else{
+   check.checked=false;
+ }
+}
+function toggleVisaAppliedFields(checked){
+ const type=document.getElementById('adminVisaType');
+ const area=document.getElementById('visaResultArea');
+ if(type)type.disabled=!checked;
+ if(area)area.classList.toggle('hidden',!checked);
+ if(!checked){document.querySelectorAll('input[name="visaResult"]').forEach(x=>x.checked=false);changeVisaResult('')}
+}
+function changeVisaResult(result){
+ const received=document.getElementById('visaReceivedFields');
+ const rejected=document.getElementById('visaRejectedFields');
+ const ticketCard=document.getElementById('ticketBookingCard');
+ const ticketCheck=document.getElementById('ticketBookedCheck');
+ const travelDate=document.getElementById('travelDateInput');
+ received?.classList.toggle('hidden',result!=='Received');
+ rejected?.classList.toggle('hidden',result!=='Rejected');
+ const enable=result==='Received';
+ ticketCard?.classList.toggle('ticket-disabled',!enable);
+ if(ticketCheck){ticketCheck.disabled=!enable;if(!enable)ticketCheck.checked=false}
+ if(travelDate){travelDate.disabled=!enable;if(!enable)travelDate.value=''}
+}
+function adminCheck(name,label,val){return `<div class="progress-card ${val?'done':''}"><div class="row"><b>${label}</b><input name="${name}" type="checkbox" ${val?'checked':''}></div></div>`}
+
+function reviewNegotiation(id,status){
+ const c=candidates.find(x=>x.id===id);if(!c||userRole()!=='superuser')return;
+ c.offerResponse=c.offerResponse||{};
+ c.offerResponse.superUserReviewStatus=status;
+ c.offerResponse.superUserReviewDate=new Date().toISOString();
+ c.history.push({date:new Date().toISOString(),text:'Offer negotiation '+status.toLowerCase()+' by Super User'});
+ persist();openAdminCandidate(id);renderDashboard();alert('Negotiation review saved.')
+}
+function generateOffer(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ modalTitle.textContent='Offer Letter Preview';modalBody.innerHTML=`<div id="offerArea" class="offer"><h1>RELIANCE GULF GENERAL CONTRACTING LLC</h1><h2>EMPLOYMENT OFFER LETTER</h2><p><b>Date:</b> ${new Date().toLocaleDateString('en-GB')}</p><p>Dear <b>${esc(c.fullName)}</b>,</p><p>We are pleased to offer you employment under the following terms:</p><table><tr><td><b>Candidate ID</b></td><td>${c.id}</td></tr><tr><td><b>Passport</b></td><td>${esc(c.passport)}</td></tr><tr><td><b>Nationality</b></td><td>${esc(c.nationality)}</td></tr><tr><td><b>Campaign</b></td><td>${esc(c.campaignNo)}</td></tr><tr><td><b>Agency</b></td><td>${esc(c.agencyName)}</td></tr><tr><td><b>Designation</b></td><td>${esc(c.interview.recommendedDesignation)}</td></tr><tr><td><b>Salary</b></td><td>AED ${c.interview.salary}</td></tr><tr><td><b>Interview Date</b></td><td>${esc(c.interview.date)}</td></tr></table><div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:70px"><div>________________<br>Candidate Signature</div><div>________________<br>Authorized Signatory</div></div></div><div class="actions"><button class="btn primary" onclick="printOffer()">Print / Save PDF</button></div>`
+}
+function printOffer(){const w=window.open('','','width=900,height=700');w.document.write('<html><head><title>Offer Letter</title><style>body{font-family:Arial;padding:35px}table{width:100%;border-collapse:collapse}td{border:1px solid #bbb;padding:10px}h1,h2{text-align:center}</style></head><body>'+offerArea.innerHTML+'</body></html>');w.document.close();w.print()}
+
+function openOps(type){currentOps=type;const ac=adminCounts(),map={selected:ac.selected,offerSend:ac.offerSend,offerReceive:ac.offerReceive,visa:ac.visa,ticket:ac.ticket,travel3:ac.travel3,uaeVisa:ac.uaeVisa},titles={selected:'Total Selected Employees',offerSend:'Pending Offer Letter Send',offerReceive:'Pending Signed Offer Received',visa:'Pending Visa Applied',ticket:'Pending Ticket Booking',travel3:'Travelling Within 3 Days',uaeVisa:'Pending UAE Visa Completion'};mainPanel.innerHTML=`<div class="panel-head"><h2>${titles[type]}</h2></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Travel Date</th><th>Progress</th><th>Action</th></tr></thead><tbody>${map[type].map(c=>`<tr><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${c.admin?.travelDate||'-'}</td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="${['admin','superuser'].includes(userRole())?`openAdminCandidate('${c.id}')`:userRole()==='interviewer'?`openInterviewerProgress('${c.id}')`:`openCandidate('${c.id}')`}">⊙</button></td></tr>`).join('')||'<tr><td colspan="8">No employees found.</td></tr>'}</tbody></table></div>`}
+
+function showCampaignReports(){
+ const list=visibleCandidates(),groups={};list.forEach(c=>(groups[c.campaignNo]??=[]).push(c));mainPanel.innerHTML=`<div class="panel-head"><h2>Campaign Reports</h2></div><div class="table-wrap"><table><thead><tr><th>Campaign</th><th>Total</th><th>Interview Pending</th><th>Selected</th><th>Rejected</th><th>Hold</th><th>Reached UAE</th></tr></thead><tbody>${Object.entries(groups).map(([k,a])=>`<tr><td><b>${k}</b></td><td>${a.length}</td><td>${a.filter(available).length}</td><td>${a.filter(selected).length}</td><td>${a.filter(c=>c.interview?.result==='Rejected').length}</td><td>${a.filter(c=>c.interview?.result==='Hold').length}</td><td>${a.filter(c=>c.admin?.reachedUAE).length}</td></tr>`).join('')||'<tr><td colspan="7">No campaign data.</td></tr>'}</tbody></table></div>`
+}
+
+function showUsers(){
+ if(userRole()!=='superuser')return;
+ const ordered=[...users].sort((a,b)=>roleLabel(a.role).localeCompare(roleLabel(b.role))||String(a.name).localeCompare(String(b.name)));
+ mainPanel.innerHTML=`<div class="panel-head"><div><h2>User Management</h2><small style="color:var(--muted)">Create and control Admin, Interviewer and Agency login accounts.</small></div><button class="btn primary" onclick="openUserForm()">Create New User</button></div>
+ <div class="table-wrap"><table><thead><tr><th>Name / Agency</th><th>User ID</th><th>Role</th><th>Campaign Access</th><th>Status</th><th>Entry</th><th>Action</th></tr></thead><tbody>${ordered.map(u=>`<tr><td><b>${esc(u.role==='agency'?(u.agencyName||u.name):u.name)}</b>${u.agencyId?`<br><small>${esc(u.agencyId)}</small>`:''}</td><td>${esc(u.userId)}</td><td><span class="tag">${esc(roleLabel(u.role))}</span></td><td>${u.allCampaigns!==false?'All Campaigns':esc((u.campaignAccess||[]).join(', ')||'Assigned only')}</td><td>${u.active?'<span style="color:var(--green);font-weight:700">Active</span>':'<span style="color:var(--red);font-weight:700">Inactive</span>'}</td><td>${u.role==='agency'?(u.entryAllowed===false?'View Only':'Allowed'):'-'}</td><td><button type="button" class="btn secondary" onclick="openUserForm('${esc(u.userId)}')">Edit</button> ${u.id==='super'?'':`<button type="button" class="btn danger" onclick="deleteUserAccount('${esc(u.userId)}')">Deactivate</button>`}</td></tr>`).join('')||'<tr><td colspan="7">No users available.</td></tr>'}</tbody></table></div>`;
+
+}
+
+function userCampaignOptions(selected=[],all=true){
+ const selectedSet=new Set((selected||[]).map(normId));
+ const cards=campaigns.length
+  ? campaigns.map(c=>`
+    <label style="display:flex;align-items:flex-start;gap:10px;margin:0;padding:11px;border:1px solid var(--line);border-radius:9px;background:#fff">
+      <input type="checkbox" name="campaignAccess" value="${esc(c.id)}"
+       ${selectedSet.has(normId(c.id))?'checked':''}
+       style="width:auto;margin:2px 0 0">
+      <span><b>${esc(c.id)}</b><br><small style="color:var(--muted)">${esc(c.name||'Campaign')}</small></span>
+    </label>`).join('')
+  : '<div class="note">No campaign has been created yet. First create a campaign from Campaign Management.</div>';
+
+ return `<label style="grid-column:1/-1">Campaign Access
+   <select id="userCampaignMode" name="campaignMode" onchange="toggleCampaignAccessFields()">
+    <option value="ALL" ${all?'selected':''}>All Campaigns</option>
+    <option value="SELECTED" ${!all?'selected':''}>Selected Campaigns Only</option>
+   </select>
+  </label>
+  <div id="campaignAccessFields" style="grid-column:1/-1;${all?'display:none':''}">
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:4px 0 10px">
+    <b>Assign One or Multiple Campaigns</b>
+    <div>
+     <button type="button" class="btn secondary" onclick="setAllCampaignChecks(true)">Select All</button>
+     <button type="button" class="btn secondary" onclick="setAllCampaignChecks(false)">Clear</button>
+    </div>
+   </div>
+   <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">${cards}</div>
+   <small style="display:block;color:var(--muted);margin-top:8px">Tick all campaigns that this user is allowed to access. You can edit the user later and add more campaigns.</small>
+  </div>`;
+}
+function setAllCampaignChecks(checked){
+ document.querySelectorAll('#campaignAccessFields input[name="campaignAccess"]').forEach(x=>x.checked=checked);
+}
+function toggleCampaignAccessFields(){
+ const box=document.getElementById('campaignAccessFields');
+ const mode=document.getElementById('userCampaignMode');
+ if(box&&mode)box.style.display=mode.value==='ALL'?'none':'';
+}
+function toggleAgencyFields(){
+ const role=document.querySelector('#userAccountForm [name=role]')?.value;
+ const isAgency=role==='agency';
+ document.getElementById('agencyFields')?.classList.toggle('hidden',!isAgency);
+
+ const campaignSection=document.getElementById('userCampaignSection');
+ if(campaignSection)campaignSection.style.display=isAgency?'none':'';
+
+ const mode=document.getElementById('userCampaignMode');
+ if(mode){
+  const allOption=mode.querySelector('option[value="ALL"]');
+  if(isAgency){
+   mode.value='SELECTED';
+   if(allOption)allOption.disabled=true;
+   document.querySelectorAll('#campaignAccessFields input[name="campaignAccess"]').forEach(x=>x.checked=false);
+  }else{
+   if(allOption)allOption.disabled=false;
+  }
+  toggleCampaignAccessFields();
+ }
+}
+
+
+// ============================================================
+// VERSION 2 — USER CREATION WITHOUT AN EDGE FUNCTION
+// ============================================================
+// New accounts are created through Supabase Auth signUp using an isolated client.
+// The logged-in Super User remains signed in. Profiles remain protected by RLS.
+async function createBrowserAuthUser(payload){
+ const email=loginEmailFromUserId(payload.userId);
+ const {data,error}=await accountSignupClient.auth.signUp({
+  email,
+  password:payload.password,
+  options:{
+   data:{
+    full_name:payload.fullName,
+    username:payload.userId,
+    agency_name:payload.agencyName||''
+   }
+  }
+ });
+ if(error)throw error;
+ if(!data?.user?.id)throw new Error('Supabase did not return the new user ID.');
+ return {authId:data.user.id,email};
+}
+
+async function savePortalProfile(payload,authId){
+ const row={
+  user_id:authId,
+  full_name:payload.fullName,
+  username:payload.userId,
+  role:payload.role,
+  active:payload.active,
+  all_campaigns:payload.allCampaigns,
+  campaign_access:payload.campaignAccess||[],
+  agency_name:payload.agencyName||null,
+  agency_id:payload.agencyId||null,
+  entry_allowed:payload.entryAllowed!==false,
+  updated_at:new Date().toISOString()
+ };
+ const {error}=await supabaseClient.from('portal_profiles').upsert(row,{onConflict:'user_id'});
+ if(error)throw error;
+}
+
+async function deactivatePortalUser(authId){
+ const {error}=await supabaseClient
+  .from('portal_profiles')
+  .update({active:false,updated_at:new Date().toISOString()})
+  .eq('user_id',authId);
+ if(error)throw error;
+}
+
+function openUserForm(id=''){
+ try{
+  if(userRole()!=='superuser'){
+   alert('Only the Super User can edit user accounts.');
+   return;
+  }
+
+  const lookup=String(id||'').trim();
+  const u=lookup
+   ? users.find(x=>
+      normId(x.id)===normId(lookup) ||
+      normId(x.authId)===normId(lookup) ||
+      normId(x.userId)===normId(lookup)
+     )
+   : null;
+
+  if(lookup&&!u){
+   alert('User record could not be found. Refresh the page and try again.');
+   return;
+  }
+
+  const isSuper=u?.role==='superuser';
+  const modalTitleEl=document.getElementById('modalTitle');
+  const modalBodyEl=document.getElementById('modalBody');
+  const modalBgEl=document.getElementById('modalBg');
+
+  if(!modalTitleEl||!modalBodyEl||!modalBgEl){
+   throw new Error('Edit modal elements are missing from the page.');
+  }
+
+  modalTitleEl.textContent=u?'Edit User':'Create New User';
+  modalBodyEl.innerHTML=`<form id="userAccountForm"><div class="form-grid">
+  <label>Full Name *<input name="name" value="${esc(u?.name||'')}" required></label>
+  <label>User ID *<input name="userId" value="${esc(u?.userId||'')}" required ${isSuper?'readonly':''}></label>
+  <label>${u?'New Password':'Password *'}<div class="password-wrap"><input id="accountPassword" name="password" type="password" ${u?'placeholder="Leave blank to keep current password"':'required'}><button type="button" class="eye-btn" onclick="document.getElementById('accountPassword').type=document.getElementById('accountPassword').type==='password'?'text':'password'">👁</button></div></label>
+  <label>Confirm Password<div class="password-wrap"><input name="confirmPassword" type="password" ${u?'placeholder="Only required when changing password"':'required'}></div></label>
+  <label>Role *<select name="role" onchange="toggleAgencyFields()" ${isSuper?'disabled':''}><option value="admin" ${u?.role==='admin'?'selected':''}>Admin / HR</option><option value="interviewer" ${u?.role==='interviewer'?'selected':''}>Interviewer</option><option value="agency" ${u?.role==='agency'?'selected':''}>Recruitment Agency</option>${isSuper?'<option value="superuser" selected>Super User</option>':''}</select></label>
+  <label>Status<select name="active"><option value="true" ${u?.active!==false?'selected':''}>Active</option><option value="false" ${u?.active===false?'selected':''}>Inactive</option></select></label>
+  <div id="agencyFields" class="form-grid ${u?.role==='agency'?'':'hidden'}" style="grid-column:1/-1;margin:0">
+   <label>Agency Name *<input name="agencyName" value="${esc(u?.agencyName||'')}"></label>
+   <label>Agency ID *<input name="agencyId" value="${esc(u?.agencyId||'')}" placeholder="AGY-001"></label>
+   <label style="grid-column:1/-1"><input type="checkbox" name="entryAllowed" ${u?.entryAllowed!==false?'checked':''} style="width:auto"> Allow Candidate Entry</label>
+  </div>
+  <div id="userCampaignSection" style="grid-column:1/-1">
+   ${userCampaignOptions(u?.campaignAccess||[],u?.allCampaigns!==false)}
+  </div>
+  </div>
+  <div class="note">Complete all required information, then click Create User. Pressing Enter will move to the next field and will not close or submit the form.</div>
+  <div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button type="submit" class="btn primary">${u?'Save Changes':'Create User'}</button></div></form>`;
+
+  modalBgEl.classList.remove('hidden');
+  toggleAgencyFields();
+
+  const form=document.getElementById('userAccountForm');
+  if(!form)throw new Error('User form could not be created.');
+
+  form.addEventListener('keydown',event=>{
+   if(event.key==='Enter' && event.target.tagName!=='TEXTAREA'){
+    event.preventDefault();
+    event.stopPropagation();
+    const fields=[...form.querySelectorAll('input:not([type="hidden"]):not([disabled]),select:not([disabled]),textarea:not([disabled])')]
+      .filter(el=>el.offsetParent!==null);
+    const currentIndex=fields.indexOf(event.target);
+    const nextField=fields[currentIndex+1];
+    if(nextField)nextField.focus();
+   }
+  });
+
+  form.onsubmit=async event=>{
+   event.preventDefault();
+   const submitButton=event.submitter||form.querySelector('button[type="submit"]');
+   const f=new FormData(form);
+   const uid=String(f.get('userId')||'').trim().toUpperCase();
+   const password=String(f.get('password')||'');
+   const confirmPassword=String(f.get('confirmPassword')||'');
+
+   if(users.some(x=>normId(x.userId)===normId(uid)&&normId(x.userId)!==normId(u?.userId))){
+    alert('This User ID already exists.');
+    return;
+   }
+   if(password!==confirmPassword){alert('Password and Confirm Password do not match.');return}
+   if(!u&&!password){alert('Password is required.');return}
+   if(password&&password.length<8){alert('Password must contain at least 8 characters.');return}
+
+   const role=isSuper?'superuser':String(f.get('role'));
+   const agencyName=String(f.get('agencyName')||'').trim();
+   const agencyId=String(f.get('agencyId')||'').trim().toUpperCase();
+
+   if(role==='agency'&&(!agencyName||!agencyId)){
+    alert('Agency Name and Agency ID are required.');
+    return;
+   }
+
+   if(role==='agency'&&users.some(x=>
+      x.role==='agency' &&
+      normId(x.agencyId)===normId(agencyId) &&
+      normId(x.userId)!==normId(u?.userId)
+   )){
+    alert('This Agency ID already exists.');
+    return;
+   }
+
+   const campaignMode=String(f.get('campaignMode')||'SELECTED');
+   const campaignAccess=[...form.querySelectorAll('input[name="campaignAccess"]:checked')].map(input=>input.value);
+
+   const payload={
+    action:u?'update':'create',
+    id:u?.id||null,
+    userId:uid,
+    password:password||null,
+    fullName:String(f.get('name')||'').trim(),
+    role,
+    active:f.get('active')==='true',
+    allCampaigns:role==='agency'?false:campaignMode==='ALL',
+    campaignAccess:role==='agency'?[]:campaignAccess,
+    agencyName:role==='agency'?agencyName:null,
+    agencyId:role==='agency'?agencyId:null,
+    entryAllowed:role==='agency'?f.get('entryAllowed')==='on':true
+   };
+
+   if(submitButton){
+    submitButton.disabled=true;
+    submitButton.textContent='Saving...';
+   }
+
+   try{
+    if(u){
+     if(password){
+      throw new Error('Existing user password cannot be changed from browser-only V2. Use Supabase Authentication.');
+     }
+     await savePortalProfile(payload,u.authId||u.id);
+    }else{
+     const created=await createBrowserAuthUser(payload);
+     await savePortalProfile(payload,created.authId);
+    }
+
+    await loadSupabaseUsers();
+    closeModal();
+    showUsers();
+    alert(u?'User profile updated successfully.':'New Supabase user created successfully.');
+   }catch(error){
+    console.error('Save user error:',error);
+    alert('Unable to save user: '+(error.message||error));
+   }finally{
+    if(submitButton){
+     submitButton.disabled=false;
+     submitButton.textContent=u?'Save Changes':'Create User';
+    }
+   }
+  };
+ }catch(error){
+  console.error('Open Edit User error:',error);
+  alert('Unable to open Edit User: '+(error.message||error));
+ }
+}
+async function deleteUserAccount(id){
+ if(userRole()!=='superuser')return;
+ const lookup=String(id||'');
+ const u=users.find(x=>
+  String(x.id||'')===lookup ||
+  String(x.authId||'')===lookup ||
+  String(x.userId||'')===lookup
+ );
+ if(!u||u.id===currentUser.id)return;
+ const assigned=campaigns.filter(c=>c.interviewerId===u.id||(u.role==='agency'&&c.agencyId===u.agencyId));
+ if(!confirm(`Are you sure you want to delete this user?
+
+${u.name}
+User ID: ${u.userId}
+Assigned Campaigns: ${assigned.length}`))return;
+ let removeData=false;
+ if(u.role==='agency')removeData=confirm(`This is an Agency user.
+
+Press OK to also delete its local campaigns and candidates.
+Press Cancel to delete only the login user.`);
+ try{
+  await deactivatePortalUser(u.authId||u.id);
+  if(u.role==='agency'&&removeData){campaigns=campaigns.filter(c=>c.agencyId!==u.agencyId);candidates=candidates.filter(c=>c.agencyId!==u.agencyId)}
+  else if(u.role==='interviewer')campaigns.forEach(c=>{if(c.interviewerId===u.id){c.interviewerId='';c.interviewerName='Unassigned'}});
+  persist();await loadSupabaseUsers();showUsers();renderDashboard();
+  alert('User access has been deactivated. The Auth account is retained for audit and recovery.');
+ }catch(err){alert('Unable to deactivate user: '+(err.message||err));}
+}
+
+// Backward-compatible buttons used by older code.
+function createAgencyUser(){openUserForm()}
+function editAgencyUser(id){openUserForm(id)}
+function deleteAgency(id){deleteUserAccount(id)}
+
+function showCampaigns(){
+ if(userRole()!=='superuser')return;
+ mainPanel.innerHTML=`<div class="panel-head"><h2>Campaign Management</h2><button class="btn primary" onclick="createCampaign()">Create Campaign</button></div><div class="table-wrap"><table><thead><tr><th>No.</th><th>Name</th><th>Agency</th><th>Interviewer</th><th>Status</th><th>Action</th></tr></thead><tbody>${campaigns.map(c=>`<tr><td><b>${c.id}</b></td><td>${esc(c.name)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.interviewerName)}</td><td>${c.status}</td><td><button class="btn secondary" onclick="toggleCampaign('${c.id}')">${c.status==='Open'?'Close':'Open'}</button> <button class="btn danger" onclick="deleteCampaign('${c.id}')">Deactivate</button></td></tr>`).join('')||'<tr><td colspan="6">No campaigns.</td></tr>'}</tbody></table></div>`
+}
+function nextCampaign(){const y=new Date().getFullYear(),n=Math.max(0,...campaigns.filter(c=>c.id.startsWith('CMP-'+y)).map(c=>Number(c.id.split('-').pop())||0))+1;return `CMP-${y}-${String(n).padStart(3,'0')}`}
+function createCampaign(){
+ const ints=users.filter(u=>u.role==='interviewer'&&u.active);
+
+ modalTitle.textContent='Create Campaign';
+ modalBody.innerHTML=`
+  <form id="campaignForm">
+   <div class="form-grid">
+    <label>Campaign Number
+     <input name="id" value="${nextCampaign()}" readonly>
+    </label>
+    <label>Campaign Name
+     <input name="name" required>
+    </label>
+    <label>Assigned Interviewer
+     <select name="interviewerId" required>
+      <option value="">Select</option>
+      <option value="ALL">All Interviewers</option>
+      ${ints.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')}
+     </select>
+    </label>
+    <label>Status
+     <select name="status">
+      <option>Open</option>
+      <option>Closed</option>
+     </select>
+    </label>
+   </div>
+   <div class="actions">
+    <button class="btn primary">Create</button>
+   </div>
+  </form>`;
+
+ modalBg.classList.remove('hidden');
+
+ campaignForm.onsubmit=async e=>{
+  e.preventDefault();
+
+  const f=new FormData(e.target);
+  const selectedInterviewer=f.get('interviewerId');
+  const allInterviewers=selectedInterviewer==='ALL';
+  const i=allInterviewers ? null : users.find(u=>u.id===selectedInterviewer);
+
+  if(!allInterviewers&&!i){
+   alert('Please select an interviewer or All Interviewers.');
+   return;
+  }
+
+  const newCampaign={
+   id:f.get('id'),
+   name:f.get('name'),
+   client:'',
+   project:'',
+   agencyId:'',
+   agencyName:'',
+   interviewerId:allInterviewers?'':i.id,
+   interviewerName:allInterviewers?'All Interviewers':i.name,
+   status:f.get('status')
+  };
+
+  campaigns.push(newCampaign);
+  persist();
+  closeModal();
+  showCampaigns();
+  alert('Campaign created successfully.');
+ }
+}
+function toggleCampaign(id){const c=campaigns.find(x=>x.id===id);c.status=c.status==='Open'?'Closed':'Open';persist();showCampaigns()}
+function deleteCampaign(id){const c=campaigns.find(x=>x.id===id),count=candidates.filter(x=>x.campaignNo===id).length;if(!confirm(`Are you sure to delete this campaign?\n\n${id}\nCandidates: ${count}\nThis cannot be undone.`))return;campaigns=campaigns.filter(x=>x.id!==id);candidates=candidates.filter(x=>x.campaignNo!==id);persist();if(dashboardCampaign===id)dashboardCampaign='ALL';refreshDashboardCampaignFilter();showCampaigns();renderDashboard()}
+
+function clearTestingData(){const typed=prompt('DANGER: This permanently deletes all candidates and campaigns.\nType DELETE TEST DATA to continue:');if(typed!=='DELETE TEST DATA'){if(typed!==null)alert('Nothing was deleted.');return;}candidates=[];campaigns=[];persist();renderDashboard();showHome();alert('Testing data cleared.')}
+
+async function refreshSharedDataFromStorage(){
+ try{
+  await loadPortalState();
+ }catch(err){
+  console.error(err);
+  campaigns=load(KEYS.campaigns,[]);
+  candidates=load(KEYS.candidates,[]);
+ }
+
+ if(currentUser){
+  refreshDashboardCampaignFilter();
+  renderDashboard();
+
+  const title=String(mainPanel?.querySelector('h2')?.textContent||'');
+  if(title.includes('Selected Employees - Admin'))showAdminSelected();
+  else if(title.includes('Selected Employees')){
+   if(userRole()==='agency')showAgencySelected();
+   else if(['admin','superuser'].includes(userRole()))showAdminSelected();
+  }else if(title.includes('Interview Results'))showAgencyResults();
+  else if(title.includes('Campaign Reports'))showCampaignReports();
+  else if(title.includes('Manpower Available for Interview'))showInterviewWorkspace();
+  else showHome();
+ }
+}
+
+window.addEventListener('storage',event=>{
+ if([KEYS.campaigns,KEYS.candidates].includes(event.key)){
+  refreshSharedDataFromStorage();
+ }
+});
+
+
+function safeFileName(value){
+ return String(value||'report')
+   .replace(/[\\/:*?"<>|]+/g,' ')
+   .replace(/\s+/g,' ')
+   .trim()
+   .replace(/ /g,'-')
+   .toLowerCase();
+}
+
+function currentReportContext(){
+ const panel=document.getElementById('mainPanel');
+ const title=panel?.querySelector('h2')?.textContent?.trim()||'Recruitment Report';
+ const campaign=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;
+ const generatedBy=currentUser?.name||currentUser?.userId||'User';
+ const role=roleLabel(currentUser?.role||'');
+ const generatedAt=new Date();
+ return {title,campaign,generatedBy,role,generatedAt};
+}
+
+function currentVisibleTable(){
+ const panel=document.getElementById('mainPanel');
+ if(!panel)return null;
+ const tables=[...panel.querySelectorAll('table')].filter(t=>t.offsetParent!==null);
+ return tables[0]||panel.querySelector('table');
+}
+
+function extractVisibleTableData(){
+ const table=currentVisibleTable();
+ if(!table)return {headers:[],rows:[]};
+
+ const headerCells=[...table.querySelectorAll('thead th')];
+ const excludedIndexes=headerCells
+   .map((th,index)=>({text:th.innerText.trim().toLowerCase(),index}))
+   .filter(x=>['action','actions'].includes(x.text))
+   .map(x=>x.index);
+
+ const headers=headerCells
+   .filter((_,index)=>!excludedIndexes.includes(index))
+   .map(th=>th.innerText.trim());
+
+ const rows=[...table.querySelectorAll('tbody tr')].map(tr=>{
+   const cells=[...tr.querySelectorAll('td')];
+   if(!cells.length)return null;
+   const values=cells
+     .filter((_,index)=>!excludedIndexes.includes(index))
+     .map(td=>td.innerText.replace(/\s+/g,' ').trim());
+   if(values.length===1&&/no .*found|no .*available|no .*data/i.test(values[0]))return null;
+   return values;
+ }).filter(Boolean);
+
+ return {headers,rows};
+}
+
+function designationSummaryForExport(){
+ const cards=[...document.querySelectorAll('#mainPanel .designation-summary-card')];
+ return cards.map(card=>({
+   designation:card.querySelector('small')?.innerText.trim()||'',
+   count:card.querySelector('strong')?.innerText.trim()||'0'
+ })).filter(x=>x.designation);
+}
+
+function addExportToolbar(){
+ const panel=document.getElementById('mainPanel');
+ if(!panel||panel.querySelector('.export-toolbar'))return;
+ const table=panel.querySelector('table');
+ if(!table)return;
+
+ const context=currentReportContext();
+ const toolbar=document.createElement('div');
+ toolbar.className='export-toolbar';
+ toolbar.innerHTML=`
+   <span class="export-label">Export Current Filter: ${esc(context.campaign)}</span>
+   <button type="button" class="export-btn export-excel" onclick="exportCurrentListExcel()">📊 Export Excel</button>
+   <button type="button" class="export-btn export-pdf" onclick="exportCurrentListPDF()">📄 Export PDF</button>
+   <button type="button" class="export-btn export-print" onclick="printCurrentList()">🖨 Print</button>`;
+ panel.insertBefore(toolbar,table.closest('.table-wrap')||table);
+}
+
+function exportCurrentListExcel(){
+ const {headers,rows}=extractVisibleTableData();
+ if(!headers.length){alert('No list is available to export.');return}
+ const context=currentReportContext();
+ const summary=designationSummaryForExport();
+ const fileName=safeFileName(context.title+'-'+context.campaign)+'.xlsx';
+
+ if(window.XLSX){
+   const workbook=XLSX.utils.book_new();
+   const reportRows=[
+     ['RELIANCE GULF GENERAL CONTRACTING LLC'],
+     ['Recruitment Management Portal'],
+     [context.title],
+     ['Campaign',context.campaign],
+     ['Generated By',context.generatedBy],
+     ['Role',context.role],
+     ['Generated Date',context.generatedAt.toLocaleString()],
+     [],
+     headers,
+     ...rows
+   ];
+   const sheet=XLSX.utils.aoa_to_sheet(reportRows);
+   sheet['!cols']=headers.map((h,index)=>({
+     wch:Math.min(40,Math.max(
+       String(h).length+4,
+       ...rows.map(row=>String(row[index]||'').length+2)
+     ))
+   }));
+   XLSX.utils.book_append_sheet(workbook,sheet,'Report');
+
+   if(summary.length){
+     const summarySheet=XLSX.utils.aoa_to_sheet([
+       ['Designation-wise Summary'],
+       ['Designation','Count'],
+       ...summary.map(x=>[x.designation,Number(x.count)||0])
+     ]);
+     summarySheet['!cols']=[{wch:35},{wch:12}];
+     XLSX.utils.book_append_sheet(workbook,summarySheet,'Designation Summary');
+   }
+
+   XLSX.writeFile(workbook,fileName);
+   return;
+ }
+
+ // Offline fallback: Excel-compatible CSV.
+ const csvRows=[
+   ['RELIANCE GULF GENERAL CONTRACTING LLC'],
+   ['Recruitment Management Portal'],
+   [context.title],
+   ['Campaign',context.campaign],
+   ['Generated By',context.generatedBy],
+   ['Generated Date',context.generatedAt.toLocaleString()],
+   [],
+   headers,
+   ...rows
+ ];
+ const csv=csvRows.map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+ downloadTextFile(csv,fileName.replace(/\.xlsx$/,'.csv'),'text/csv;charset=utf-8;');
+}
+
+function exportCurrentListPDF(){
+ const {headers,rows}=extractVisibleTableData();
+ if(!headers.length){alert('No list is available to export.');return}
+ const context=currentReportContext();
+ const summary=designationSummaryForExport();
+ const fileName=safeFileName(context.title+'-'+context.campaign)+'.pdf';
+
+ if(window.jspdf?.jsPDF){
+   const {jsPDF}=window.jspdf;
+   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+   const pageWidth=doc.internal.pageSize.getWidth();
+
+   try{
+     if(typeof LOGO==='string'&&LOGO.startsWith('data:image')){
+       doc.addImage(LOGO,'PNG',10,7,32,19);
+     }
+   }catch(error){}
+
+   doc.setFontSize(15);
+   doc.setFont(undefined,'bold');
+   doc.text('RELIANCE GULF GENERAL CONTRACTING LLC',pageWidth/2,12,{align:'center'});
+   doc.setFontSize(11);
+   doc.text('Recruitment Management Portal',pageWidth/2,18,{align:'center'});
+   doc.setFontSize(13);
+   doc.text(context.title,pageWidth/2,25,{align:'center'});
+
+   doc.setFontSize(8);
+   doc.setFont(undefined,'normal');
+   doc.text(`Campaign: ${context.campaign}`,10,31);
+   doc.text(`Generated By: ${context.generatedBy} (${context.role})`,10,36);
+   doc.text(`Generated Date: ${context.generatedAt.toLocaleString()}`,10,41);
+   doc.text(`Total Records: ${rows.length}`,pageWidth-10,31,{align:'right'});
+
+   let startY=46;
+   if(summary.length){
+     const summaryText=summary.map(x=>`${x.designation}: ${x.count}`).join('   |   ');
+     const lines=doc.splitTextToSize('Designation Summary: '+summaryText,pageWidth-20);
+     doc.text(lines,10,startY);
+     startY+=lines.length*4+3;
+   }
+
+   doc.autoTable({
+     head:[headers],
+     body:rows,
+     startY,
+     theme:'grid',
+     styles:{fontSize:7,cellPadding:2,overflow:'linebreak'},
+     headStyles:{fillColor:[20,77,120],textColor:255,fontStyle:'bold'},
+     margin:{left:10,right:10,bottom:13},
+     didDrawPage:data=>{
+       const pageNo=doc.internal.getNumberOfPages();
+       doc.setFontSize(7);
+       doc.text(
+         'Generated from Reliance Gulf Recruitment Management Portal',
+         10,
+         doc.internal.pageSize.getHeight()-6
+       );
+       doc.text(
+         `Page ${pageNo}`,
+         pageWidth-10,
+         doc.internal.pageSize.getHeight()-6,
+         {align:'right'}
+       );
+     }
+   });
+   doc.save(fileName);
+   return;
+ }
+
+ alert('PDF library is not available. Print preview will open instead.');
+ printCurrentList();
+}
+
+function printCurrentList(){
+ const {headers,rows}=extractVisibleTableData();
+ if(!headers.length){alert('No list is available to print.');return}
+ const context=currentReportContext();
+ const summary=designationSummaryForExport();
+
+ const printWindow=window.open('','','width=1200,height=800');
+ if(!printWindow){alert('Please allow pop-ups for printing.');return}
+
+ const summaryHTML=summary.length?`
+   <h3>Designation-wise Summary</h3>
+   <div class="summary">${summary.map(x=>`<div><b>${esc(x.designation)}</b><span>${esc(x.count)}</span></div>`).join('')}</div>`:'';
+
+ printWindow.document.write(`<!DOCTYPE html><html><head><title>${esc(context.title)}</title>
+ <style>
+ body{font-family:Arial,sans-serif;margin:18px;color:#111}
+ .header{text-align:center;border-bottom:2px solid #174f78;padding-bottom:10px}
+ .header img{max-height:60px;max-width:180px;float:left}
+ h1{font-size:19px;margin:4px}h2{font-size:15px;margin:4px}
+ .meta{font-size:11px;margin:12px 0;display:grid;grid-template-columns:1fr 1fr;gap:5px}
+ table{width:100%;border-collapse:collapse;font-size:9px}
+ th,td{border:1px solid #999;padding:5px;text-align:left;vertical-align:top}
+ th{background:#174f78;color:#fff}
+ .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+ .summary div{border:1px solid #bbb;padding:7px;display:flex;justify-content:space-between}
+ .footer{margin-top:14px;font-size:9px;text-align:center;color:#555}
+ @page{size:A4 landscape;margin:10mm}
+ </style></head><body>
+ <div class="header">${typeof LOGO==='string'?`<img src="${LOGO}">`:''}
+ <h1>RELIANCE GULF GENERAL CONTRACTING LLC</h1>
+ <h2>Recruitment Management Portal</h2>
+ <h2>${esc(context.title)}</h2></div>
+ <div class="meta">
+  <div><b>Campaign:</b> ${esc(context.campaign)}</div>
+  <div><b>Total Records:</b> ${rows.length}</div>
+  <div><b>Generated By:</b> ${esc(context.generatedBy)} (${esc(context.role)})</div>
+  <div><b>Generated Date:</b> ${esc(context.generatedAt.toLocaleString())}</div>
+ </div>
+ ${summaryHTML}
+ <table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
+ <tbody>${rows.map(row=>`<tr>${row.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>
+ <div class="footer">Generated from Reliance Gulf Recruitment Management Portal</div>
+ </body></html>`);
+ printWindow.document.close();
+ printWindow.focus();
+ setTimeout(()=>printWindow.print(),300);
+}
+
+function downloadTextFile(content,fileName,mime){
+ const blob=new Blob(['\ufeff'+content],{type:mime});
+ const url=URL.createObjectURL(blob);
+ const link=document.createElement('a');
+ link.href=url;link.download=fileName;document.body.appendChild(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+const exportPanelObserver=new MutationObserver(()=>setTimeout(addExportToolbar,0));
+document.addEventListener('DOMContentLoaded',()=>{
+ const panel=document.getElementById('mainPanel');
+ if(panel){
+   exportPanelObserver.observe(panel,{childList:true,subtree:true});
+   addExportToolbar();
+ }
+});
+
+if(supabaseClient){
+ supabaseClient
+  .channel('portal-state-live-v22')
+  .on('postgres_changes',{
+   event:'*',
+   schema:'public',
+   table:'portal_app_state',
+   filter:'state_key=eq.main'
+  },async()=>{
+   if(!currentUser)return;
+   try{
+    await loadPortalState();
+    refreshDashboardCampaignFilter();
+    renderDashboard();
+    showHome();
+   }catch(err){console.error(err)}
+  })
+  .subscribe();
+}
+
+
+
+function closeModal(){modalBg.classList.add('hidden')}
+
+// Stable interaction safeguards.
+// Forms close only through Cancel, X, or after a successful save.
+modalBg.addEventListener('click',event=>{
+ if(event.target===modalBg){
+  event.preventDefault();
+  event.stopPropagation();
+ }
+});
+document.addEventListener('keydown',event=>{
+ if(event.key==='Escape'&&!modalBg.classList.contains('hidden')){
+  event.preventDefault();
+  event.stopPropagation();
+ }
+});
+window.addEventListener('pageshow',()=>{
+ document.body.style.pointerEvents='auto';
+ const menu=document.getElementById('navMenu');
+ if(menu)menu.style.pointerEvents='auto';
+});
+
+loginLogo.src=LOGO;sideLogo.src=LOGO;if(!SUPABASE_READY)supabaseConfigWarning.style.display='block';
+restore();
+</script>
+</body>
+</html>
