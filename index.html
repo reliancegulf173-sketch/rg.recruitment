@@ -50,6 +50,12 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 .split{display:grid;grid-template-columns:1fr 1fr;gap:18px}.list-box{border:1px solid var(--line);border-radius:10px;max-height:560px;overflow:auto}.list-item{padding:12px;border-bottom:1px solid var(--line);cursor:pointer}.list-item:hover,.list-item.active{background:#eef5ff}.list-item small{display:block;color:var(--muted);margin-top:4px}
 .rating-row{display:grid;grid-template-columns:1fr 170px;gap:10px;align-items:center;margin:9px 0}
 .interview-workspace-grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:18px;align-items:start}
+.interview-designation-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:0 0 16px}
+.interview-designation-card{border:1px solid var(--line);background:#f8faff;border-radius:10px;padding:12px;cursor:pointer;text-align:left;transition:.2s}
+.interview-designation-card:hover,.interview-designation-card.active{border-color:#79a4e7;background:#eaf2ff;transform:translateY(-1px)}
+.interview-designation-card small{display:block;color:var(--muted);font-weight:700;white-space:normal}
+.interview-designation-card strong{display:block;font-size:22px;margin-top:5px;color:var(--navy)}
+.interview-summary-wrap{grid-column:1/-1}
 .interview-candidate-layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:18px;align-items:start}
 .candidate-bio-card{position:sticky;top:94px;border:1px solid var(--line);border-radius:12px;background:#fbfcff;padding:16px;max-height:calc(100vh - 120px);overflow:auto}
 .candidate-bio-card h3{margin:0 0 12px;font-size:18px}
@@ -834,14 +840,93 @@ function editCandidate(id){
  }
 }
 
+let interviewDesignationFilter='ALL';
+
 function showInterviewWorkspace(){
  if(userRole()!=='interviewer'){alert('Interviewer only.');return}
+
  const interviewerList=visibleCandidates().filter(available);
- mainPanel.innerHTML=`<div class="interview-workspace-grid"><div><div class="panel-head"><h2>Manpower Available for Interview</h2><span class="tag">${interviewerList.length} Available</span></div><input id="interviewSearch" placeholder="Search by name or passport..." oninput="renderInterviewList()"><div id="interviewList" class="list-box" style="margin-top:12px"></div></div><div id="interviewFormArea"><h2>Candidate Interview</h2><p>Select a candidate from the list. Candidate bio data and interview evaluation will open together.</p></div></div>`;renderInterviewList()
+ const designationCounts=interviewerList.reduce((acc,c)=>{
+  const designation=String(c.designation||'Not Specified').trim()||'Not Specified';
+  acc[designation]=(acc[designation]||0)+1;
+  return acc;
+ },{});
+
+ const designationCards=Object.entries(designationCounts)
+  .sort((a,b)=>a[0].localeCompare(b[0]))
+  .map(([designation,count])=>`
+   <button type="button" class="interview-designation-card" data-designation="${esc(designation)}" onclick="setInterviewDesignationFilter('${encodeURIComponent(designation)}')">
+    <small>${esc(designation)}</small>
+    <strong>${count}</strong>
+   </button>`).join('');
+
+ interviewDesignationFilter='ALL';
+
+ mainPanel.innerHTML=`
+  <div class="interview-workspace-grid">
+   <div class="interview-summary-wrap">
+    <div class="panel-head">
+     <h2>Available for Interview — Designation-wise Summary</h2>
+     <span class="tag">${interviewerList.length} Total Available</span>
+    </div>
+    <div class="interview-designation-summary">
+     <button type="button" class="interview-designation-card active" data-designation="ALL" onclick="setInterviewDesignationFilter('ALL')">
+      <small>All Designations</small>
+      <strong>${interviewerList.length}</strong>
+     </button>
+     ${designationCards}
+    </div>
+   </div>
+
+   <div>
+    <div class="panel-head">
+     <h2>Manpower Available for Interview</h2>
+     <span id="interviewAvailableCount" class="tag">${interviewerList.length} Available</span>
+    </div>
+    <input id="interviewSearch" placeholder="Search by name, passport or designation..." oninput="renderInterviewList()">
+    <div id="interviewList" class="list-box" style="margin-top:12px"></div>
+   </div>
+
+   <div id="interviewFormArea">
+    <h2>Candidate Interview</h2>
+    <p>Select a candidate from the list. Candidate bio data and interview evaluation will open together.</p>
+   </div>
+  </div>`;
+
+ renderInterviewList();
 }
+
+function setInterviewDesignationFilter(encodedDesignation){
+ interviewDesignationFilter=encodedDesignation==='ALL'?'ALL':decodeURIComponent(encodedDesignation);
+
+ document.querySelectorAll('.interview-designation-card').forEach(card=>{
+  card.classList.toggle('active',card.dataset.designation===interviewDesignationFilter);
+ });
+
+ renderInterviewList();
+}
+
 function renderInterviewList(){
- const q=String(interviewSearch.value||'').toLowerCase(),list=visibleCandidates().filter(available).filter(c=>c.fullName.toLowerCase().includes(q)||c.passport.toLowerCase().includes(q));
- interviewList.innerHTML=list.map(c=>`<div class="list-item" data-candidate-id="${esc(c.id)}" onclick="selectForInterview('${c.id}')"><b>${esc(c.fullName)}</b><small>${esc(c.passport)} · ${esc(c.designation)} · ${esc(c.campaignNo)}</small></div>`).join('')||'<div style="padding:20px;color:var(--muted)">No manpower available.</div>'
+ const searchEl=document.getElementById('interviewSearch');
+ const listEl=document.getElementById('interviewList');
+ if(!searchEl||!listEl)return;
+
+ const q=String(searchEl.value||'').toLowerCase().trim();
+
+ const list=visibleCandidates().filter(available).filter(c=>{
+  const matchesDesignation=interviewDesignationFilter==='ALL'||String(c.designation||'Not Specified')===interviewDesignationFilter;
+  const searchText=[c.fullName,c.passport,c.designation,c.campaignNo,c.agencyName,c.agentName].map(v=>String(v||'').toLowerCase()).join(' ');
+  return matchesDesignation&&searchText.includes(q);
+ });
+
+ const countEl=document.getElementById('interviewAvailableCount');
+ if(countEl)countEl.textContent=`${list.length} Available`;
+
+ listEl.innerHTML=list.map(c=>`
+  <div class="list-item" data-candidate-id="${esc(c.id)}" onclick="selectForInterview('${c.id}')">
+   <b>${esc(c.fullName)}</b>
+   <small>${esc(c.passport)} · ${esc(c.designation)} · ${esc(c.campaignNo)}</small>
+  </div>`).join('')||'<div style="padding:20px;color:var(--muted)">No manpower available for this designation.</div>';
 }
 function ratingOptions(){return '<option value="">Select</option><option>Excellent</option><option>Good</option><option>Average</option><option>Poor</option>'}
 function selectForInterview(id){
