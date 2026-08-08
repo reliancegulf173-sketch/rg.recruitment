@@ -240,41 +240,137 @@ const accountSignupClient=SUPABASE_READY?window.supabase.createClient(
 const DEFAULT_USERS=[];
 let users=[],campaigns=[],candidates=[],currentUser=null,currentOps='selected',dashboardCampaign='ALL';
 let stateSaveTimer=null,stateLoaded=false;
+let stateSaveInFlight=false,stateSaveQueued=false,stateLocalVersion=0,stateSavedVersion=0;
+let stateBaseline={campaigns:[],candidates:[]};
+let stateRemoteRefreshQueued=false;
 
+function cloneStateValue(v){return JSON.parse(JSON.stringify(v??[]))}
+function stateItemMap(list){return new Map((Array.isArray(list)?list:[]).map(x=>[String(x?.id??''),x]))}
+function sameStateItem(a,b){return JSON.stringify(a??null)===JSON.stringify(b??null)}
+function mergeStateList(baseList,localList,remoteList){
+ const base=stateItemMap(baseList),local=stateItemMap(localList),remote=stateItemMap(remoteList);
+ const ids=new Set([...base.keys(),...local.keys(),...remote.keys()]);
+ const merged=[];
+ for(const id of ids){
+  if(!id)continue;
+  const b=base.get(id),l=local.get(id),r=remote.get(id);
+  const localChanged=!sameStateItem(l,b);
+  const remoteChanged=!sameStateItem(r,b);
+  let chosen;
+  if(localChanged)chosen=l;              // current user's edit/delete wins for this same record
+  else if(remoteChanged)chosen=r;        // preserve another user's newer edit
+  else chosen=l!==undefined?l:r;
+  if(chosen!==undefined)merged.push(chosen);
+ }
+ return merged;
+}
+function setStateBaseline(){
+ stateBaseline={campaigns:cloneStateValue(campaigns),candidates:cloneStateValue(candidates)};
+}
 function load(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}}
 function persist(){
  localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
  localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
+ stateLocalVersion++;
  if(!supabaseClient||!currentUser||!stateLoaded)return;
  clearTimeout(stateSaveTimer);
- stateSaveTimer=setTimeout(savePortalState,300);
+ stateSaveTimer=setTimeout(()=>savePortalState().catch(err=>console.error('Queued state save failed:',err)),120);
 }
 async function loadPortalState(){
  if(!supabaseClient)return;
  const {data,error}=await supabaseClient
   .from('portal_app_state')
-  .select('campaigns,candidates')
+  .select('campaigns,candidates,updated_at,updated_by')
   .eq('state_key','main')
   .maybeSingle();
  if(error)throw error;
  campaigns=Array.isArray(data?.campaigns)?data.campaigns:[];
  candidates=Array.isArray(data?.candidates)?data.candidates:[];
  stateLoaded=true;
+ stateLocalVersion=0;
+ stateSavedVersion=0;
+ setStateBaseline();
  localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
  localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
 }
 async function savePortalState(){
- if(!supabaseClient||!currentUser||!stateLoaded)return;
- const {error}=await supabaseClient.from('portal_app_state').upsert({
-  state_key:'main',
-  campaigns,
-  candidates,
-  updated_by:currentUser.authId||currentUser.id,
-  updated_at:new Date().toISOString()
- },{onConflict:'state_key'});
- if(error){
+ if(!supabaseClient||!currentUser||!stateLoaded)return true;
+ if(stateSaveInFlight){stateSaveQueued=true;return true;}
+ stateSaveInFlight=true;
+ clearTimeout(stateSaveTimer);
+ const versionAtStart=stateLocalVersion;
+ try{
+  let lastError=null;
+  for(let attempt=1;attempt<=5;attempt++){
+   const {data:remote,error:readError}=await supabaseClient
+    .from('portal_app_state')
+    .select('campaigns,candidates,updated_at')
+    .eq('state_key','main')
+    .maybeSingle();
+   if(readError)throw readError;
+
+   const mergedCampaigns=mergeStateList(stateBaseline.campaigns,campaigns,remote?.campaigns||[]);
+   const mergedCandidates=mergeStateList(stateBaseline.candidates,candidates,remote?.candidates||[]);
+   const updatedAt=new Date().toISOString();
+   const row={
+    state_key:'main',campaigns:mergedCampaigns,candidates:mergedCandidates,
+    updated_by:currentUser.authId||currentUser.id,updated_at:updatedAt
+   };
+
+   let result;
+   if(remote?.updated_at){
+    result=await supabaseClient.from('portal_app_state')
+     .update(row)
+     .eq('state_key','main')
+     .eq('updated_at',remote.updated_at)
+     .select('updated_at')
+     .maybeSingle();
+    if(!result.error&&!result.data){
+     // Another user saved between our read and write. Retry with their latest state.
+     await new Promise(r=>setTimeout(r,60*attempt));
+     continue;
+    }
+   }else{
+    result=await supabaseClient.from('portal_app_state')
+     .upsert(row,{onConflict:'state_key'})
+     .select('updated_at')
+     .maybeSingle();
+   }
+
+   if(result.error){lastError=result.error;await new Promise(r=>setTimeout(r,120*attempt));continue;}
+
+   const newerLocalChanges=stateLocalVersion>versionAtStart;
+   stateSavedVersion=Math.max(stateSavedVersion,versionAtStart);
+   // The successful write becomes our merge baseline. Never overwrite edits made while this request was in flight.
+   stateBaseline={campaigns:cloneStateValue(mergedCampaigns),candidates:cloneStateValue(mergedCandidates)};
+   if(!newerLocalChanges){
+    campaigns=mergedCampaigns;
+    candidates=mergedCandidates;
+   }
+   localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
+   localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
+   lastError=null;
+   break;
+  }
+  if(lastError)throw lastError;
+  return true;
+ }catch(error){
   console.error('Supabase state save failed:',error);
-  alert('Data could not be saved to Supabase: '+error.message);
+  alert('Data could not be saved to Supabase. Please check internet connection and try again.\n\n'+(error.message||error));
+  throw error;
+ }finally{
+  stateSaveInFlight=false;
+  if(stateSaveQueued||stateLocalVersion>stateSavedVersion){
+   stateSaveQueued=false;
+   clearTimeout(stateSaveTimer);
+   stateSaveTimer=setTimeout(()=>savePortalState().catch(err=>console.error(err)),80);
+  }else if(stateRemoteRefreshQueued){
+   stateRemoteRefreshQueued=false;
+   setTimeout(async()=>{
+    try{await loadPortalState();refreshDashboardCampaignFilter();renderDashboard();}
+    catch(err){console.error('Deferred realtime refresh failed:',err)}
+   },80);
+  }
  }
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
@@ -2443,22 +2539,27 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 if(supabaseClient){
  supabaseClient
-  .channel('portal-state-live-v22')
+  .channel('portal-state-live-v23')
   .on('postgres_changes',{
    event:'*',
    schema:'public',
    table:'portal_app_state',
    filter:'state_key=eq.main'
-  },async()=>{
+  },async payload=>{
    if(!currentUser)return;
+   const changedBy=payload?.new?.updated_by||'';
+   const myId=currentUser.authId||currentUser.id;
+   // Ignore our own echo. If a local save is pending, defer other-user refresh until it is safely merged.
+   if(changedBy&&String(changedBy)===String(myId))return;
+   if(stateSaveInFlight||stateLocalVersion>stateSavedVersion){stateRemoteRefreshQueued=true;return;}
    try{
     await loadPortalState();
     refreshDashboardCampaignFilter();
     renderDashboard();
-    showHome();
-   }catch(err){console.error(err)}
+    // Do not force user back to Home while they are working in another module/modal.
+   }catch(err){console.error('Realtime state refresh failed:',err)}
   })
-  .subscribe();
+  .subscribe(status=>console.log('Portal realtime:',status));
 }
 
 
@@ -2484,6 +2585,54 @@ window.addEventListener('pageshow',()=>{
  const menu=document.getElementById('navMenu');
  if(menu)menu.style.pointerEvents='auto';
 });
+
+
+// ===== FORCE MANUAL TEXT ENTRIES TO UPPERCASE =====
+// Keeps case-sensitive fields such as passwords, emails, URLs, file inputs and login User ID unchanged.
+function shouldForceUppercase(el){
+ if(!el || !el.matches) return false;
+ if(el.dataset && el.dataset.keepCase==='true') return false;
+ if(el.id==='loginUser' || el.id==='loginPass') return false;
+ if(el.isContentEditable) return true;
+ if(el.tagName==='TEXTAREA') return true;
+ if(el.tagName!=='INPUT') return false;
+ const type=(el.getAttribute('type')||'text').toLowerCase();
+ return !['password','email','url','file','date','datetime-local','month','week','time','number','range','color','checkbox','radio','hidden','button','submit','reset'].includes(type);
+}
+
+function forceUppercaseEntry(el){
+ if(!shouldForceUppercase(el)) return;
+ if(el.isContentEditable){
+   const v=el.textContent||'';
+   const upper=v.toUpperCase();
+   if(v!==upper) el.textContent=upper;
+   return;
+ }
+ const v=el.value||'';
+ const upper=v.toUpperCase();
+ if(v===upper) return;
+ const start=typeof el.selectionStart==='number'?el.selectionStart:null;
+ const end=typeof el.selectionEnd==='number'?el.selectionEnd:null;
+ el.value=upper;
+ if(start!==null && end!==null){
+   try{el.setSelectionRange(start,end)}catch(_e){}
+ }
+}
+
+document.addEventListener('input',event=>{
+ forceUppercaseEntry(event.target);
+},true);
+
+document.addEventListener('change',event=>{
+ forceUppercaseEntry(event.target);
+},true);
+
+document.addEventListener('submit',event=>{
+ const form=event.target;
+ if(form && form.querySelectorAll){
+   form.querySelectorAll('input,textarea,[contenteditable="true"]').forEach(forceUppercaseEntry);
+ }
+},true);
 
 loginLogo.src=LOGO;sideLogo.src=LOGO;if(!SUPABASE_READY)supabaseConfigWarning.style.display='block';
 restore();
