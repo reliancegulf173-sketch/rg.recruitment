@@ -465,7 +465,7 @@ function changeDashboardCampaign(value){
  showHome();
 }
 function selected(c){return !c.processStopped&&c.interview?.result==='Selected'}
-function available(c){return !c.processStopped&&(!c.interview || !['Selected','Rejected','Shortlisted for Client','Absent'].includes(c.interview.result))}
+function available(c){return !c.processStopped&&!c.interview}
 function bool(v){return v===true}
 function within3(date){if(!date)return false;const d=new Date(date+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);const e=new Date(t);e.setDate(e.getDate()+3);return d>=t&&d<=e}
 
@@ -1050,7 +1050,7 @@ function interviewFilterOptions(list,key,label){
 }
 
 function filteredInterviewCandidates(){
- return visibleCandidates().filter(c=>{
+ return visibleCandidates().filter(available).filter(c=>{
   const designation=String(c.designation||'Not Specified').trim()||'Not Specified';
   const agency=String(c.agencyName||'').trim();
   const matchesDesignation=interviewDesignationFilter==='ALL'||designation===interviewDesignationFilter;
@@ -1064,7 +1064,7 @@ function renderInterviewDesignationSummary(){
  const totalEl=document.getElementById('interviewSummaryTotal');
  if(!summaryEl)return;
 
- const agencyFiltered=visibleCandidates().filter(c=>interviewAgencyFilter==='ALL'||String(c.agencyName||'').trim()===interviewAgencyFilter);
+ const agencyFiltered=visibleCandidates().filter(available).filter(c=>interviewAgencyFilter==='ALL'||String(c.agencyName||'').trim()===interviewAgencyFilter);
  const designationCounts=agencyFiltered.reduce((acc,c)=>{
   const designation=String(c.designation||'Not Specified').trim()||'Not Specified';
   acc[designation]=(acc[designation]||0)+1;
@@ -1092,7 +1092,7 @@ function renderInterviewDesignationSummary(){
 function showInterviewWorkspace(){
  if(userRole()!=='interviewer'){alert('Interviewer only.');return}
 
- const interviewerList=visibleCandidates();
+ const interviewerList=visibleCandidates().filter(available);
  interviewDesignationFilter='ALL';
  interviewAgencyFilter='ALL';
 
