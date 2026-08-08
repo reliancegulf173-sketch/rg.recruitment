@@ -111,6 +111,40 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 }
 
 @media(max-width:1250px){.ops{grid-template-columns:repeat(4,1fr)}}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.grid2,.split{grid-template-columns:1fr}.quick-row{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{height:auto;position:relative}.cards,.ops,.quick-row,.form-grid,.details,.progress-grid{grid-template-columns:1fr}.content{padding:16px}}
+
+/* ===== LONG LIST FREEZE PANE ===== */
+.table-wrap{
+  overflow:auto;
+  max-height:calc(100vh - 220px);
+  position:relative;
+}
+.table-wrap table thead th,
+.table-wrap table > tbody:first-child > tr:first-child > th{
+  position:sticky;
+  top:0;
+  z-index:6;
+  background:#fbfcff;
+  box-shadow:0 1px 0 var(--line);
+}
+/* Keep the first column visible while scrolling horizontally */
+.table-wrap table th:first-child,
+.table-wrap table td:first-child{
+  position:sticky;
+  left:0;
+  z-index:5;
+  background:#fff;
+  box-shadow:1px 0 0 var(--line);
+}
+.table-wrap table thead th:first-child,
+.table-wrap table > tbody:first-child > tr:first-child > th:first-child{
+  z-index:8;
+  background:#fbfcff;
+}
+/* Preserve special row highlighting on frozen first cell */
+.table-wrap tr.row-rejected td:first-child{background:#fff0f0!important}
+@media(max-width:760px){
+  .table-wrap{max-height:calc(100vh - 170px)}
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -544,7 +578,7 @@ function candidateMultiFilterHTML(list,id){
  const designations=uniqueCandidateValues(list,c=>c.interview?.recommendedDesignation||c.designation);
  const results=uniqueCandidateValues(list,c=>c.interview?.result||stage(c));
  const clients=uniqueCandidateValues(list,c=>c.interview?.recommendedClient);
- const agents=uniqueCandidateValues(list,c=>c.agentName||c.agencyName);
+ const agents=uniqueCandidateValues(list,c=>c.agencyName||c.agentName);
  const campaigns=uniqueCandidateValues(list,c=>c.campaignNo);
  const opts=a=>a.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
  return `<div class="multi-filter-bar" id="${id}Filters">
@@ -559,7 +593,7 @@ function candidateMultiFilterHTML(list,id){
 }
 function candidateFilterAttrs(c){
  const search=[c.id,c.fullName,c.passport,c.interview?.recommendedDesignation,c.designation,c.interview?.recommendedClient,c.agentName,c.agencyName,c.campaignNo,c.interview?.remarks,c.clientRemarks].filter(Boolean).join(' ').toLowerCase();
- return `data-filter-row="1" data-search="${esc(search)}" data-designation="${esc(c.interview?.recommendedDesignation||c.designation||'')}" data-result="${esc(c.interview?.result||stage(c))}" data-client="${esc(c.interview?.recommendedClient||'')}" data-agent="${esc(c.agentName||c.agencyName||'')}" data-campaign="${esc(c.campaignNo||'')}"`;
+ return `data-filter-row="1" data-search="${esc(search)}" data-designation="${esc(c.interview?.recommendedDesignation||c.designation||'')}" data-result="${esc(c.interview?.result||stage(c))}" data-client="${esc(c.interview?.recommendedClient||'')}" data-agent="${esc(c.agencyName||c.agentName||'')}" data-campaign="${esc(c.campaignNo||'')}"`;
 }
 function applyCandidateMultiFilters(id){
  const box=document.getElementById(id+'Filters');const table=document.getElementById(id+'Table');if(!box||!table)return;
@@ -614,7 +648,7 @@ function showShortlistedForClientList(list,title){
    const interviewRemarks=String(c.interview?.remarks||'').trim();
    const clientRemarks=String(c.clientRemarks||'').trim();
    return `<tr ${candidateFilterAttrs(c)}>
-    <td><b>${esc(c.id)}</b></td><td>${esc(c.fullName)}</td><td>${esc(c.passport||'-')}</td><td>${esc(c.campaignNo||'-')}</td><td>${esc(c.agentName||c.agencyName||'-')}</td>
+    <td><b>${esc(c.id)}</b></td><td>${esc(c.fullName)}</td><td>${esc(c.passport||'-')}</td><td>${esc(c.campaignNo||'-')}</td><td>${esc(c.agencyName||c.agentName||'-')}</td>
     <td>${esc(c.interview?.recommendedDesignation||c.designation||'-')}</td>
     <td>${esc(c.interview?.recommendedClient||'-')}</td>
     <td class="interview-remarks-cell" title="${esc(interviewRemarks||'No interview remarks')}">${interviewRemarks?`<div class="interview-remarks-preview">${esc(interviewRemarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td>
@@ -675,7 +709,7 @@ function candidateTable(list){
     <td>${esc(c.fullName)}</td>
     <td>${esc(c.passport)}</td>
     <td>${esc(c.campaignNo)}</td>
-    <td>${esc(c.agentName||c.agencyName||'-')}</td>
+    <td>${esc(c.agencyName||c.agentName||'-')}</td>
     <td>${esc(c.interview?.recommendedDesignation||c.designation||'-')}</td>
     <td class="interview-remarks-cell" title="${esc(remarks||'No interview remarks')}">
      ${remarks?`<div class="interview-remarks-preview">${esc(remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}
@@ -919,7 +953,7 @@ function editCandidate(id){
 
  modalBg.classList.remove('hidden');
 
- editForm.onsubmit=e=>{
+ editForm.onsubmit=async e=>{
   e.preventDefault();
   const f=new FormData(e.target);
   const passport=String(f.get('passport')).trim().toUpperCase();
@@ -967,11 +1001,17 @@ function editCandidate(id){
   c.history=c.history||[];
   c.history.push({date:new Date().toISOString(),text:'Complete profile updated by '+currentUser.name+(oldAgencyName!==newAgencyName?' | Recruitment Agency changed from '+(oldAgencyName||'-')+' to '+newAgencyName:'')});
 
-  persist();
+  // Save locally first, then immediately persist the updated employee to Supabase.
+  localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
+  localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
+  if(supabaseClient&&currentUser&&stateLoaded){
+   clearTimeout(stateSaveTimer);
+   await savePortalState();
+  }
   closeModal();
   renderDashboard();
   showHome();
-  alert('Employee profile updated successfully.');
+  alert('Employee profile updated successfully. Recruitment Agency: '+newAgencyName);
  }
 }
 
