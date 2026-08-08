@@ -111,6 +111,40 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 }
 
 @media(max-width:1250px){.ops{grid-template-columns:repeat(4,1fr)}}@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.grid2,.split{grid-template-columns:1fr}.quick-row{grid-template-columns:repeat(3,1fr)}}@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{height:auto;position:relative}.cards,.ops,.quick-row,.form-grid,.details,.progress-grid{grid-template-columns:1fr}.content{padding:16px}}
+
+/* ===== LONG LIST FREEZE PANE ===== */
+.table-wrap{
+  overflow:auto;
+  max-height:calc(100vh - 220px);
+  position:relative;
+}
+.table-wrap table thead th,
+.table-wrap table > tbody:first-child > tr:first-child > th{
+  position:sticky;
+  top:0;
+  z-index:6;
+  background:#fbfcff;
+  box-shadow:0 1px 0 var(--line);
+}
+/* Keep the first column visible while scrolling horizontally */
+.table-wrap table th:first-child,
+.table-wrap table td:first-child{
+  position:sticky;
+  left:0;
+  z-index:5;
+  background:#fff;
+  box-shadow:1px 0 0 var(--line);
+}
+.table-wrap table thead th:first-child,
+.table-wrap table > tbody:first-child > tr:first-child > th:first-child{
+  z-index:8;
+  background:#fbfcff;
+}
+/* Preserve special row highlighting on frozen first cell */
+.table-wrap tr.row-rejected td:first-child{background:#fff0f0!important}
+@media(max-width:760px){
+  .table-wrap{max-height:calc(100vh - 170px)}
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -540,7 +574,12 @@ function designationSummaryData(list){
  return Object.entries(map).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
 }
 function uniqueCandidateValues(list,fn){return [...new Set(list.map(fn).map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
-function candidateMultiFilterHTML(list,id){
+function selectedSource(c){
+ const marked=c.selectionSource==='Client Shortlist';
+ const fromHistory=(c.history||[]).some(h=>String(h?.text||'').includes('Client decision changed from Shortlisted for Client to Selected'));
+ return marked||fromHistory?'Selected from Client Shortlist':'Direct Selected';
+}
+function candidateMultiFilterHTML(list,id,includeSelectionSource=false){
  const designations=uniqueCandidateValues(list,c=>c.interview?.recommendedDesignation||c.designation);
  const results=uniqueCandidateValues(list,c=>c.interview?.result||stage(c));
  const clients=uniqueCandidateValues(list,c=>c.interview?.recommendedClient);
@@ -554,18 +593,19 @@ function candidateMultiFilterHTML(list,id){
   <label>Recommended Client<select data-filter="client" onchange="applyCandidateMultiFilters('${id}')"><option value="">All</option>${opts(clients)}</select></label>
   <label>Agent / Agency<select data-filter="agent" onchange="applyCandidateMultiFilters('${id}')"><option value="">All</option>${opts(agents)}</select></label>
   <label>Campaign<select data-filter="campaign" onchange="applyCandidateMultiFilters('${id}')"><option value="">All</option>${opts(campaigns)}</select></label>
+  ${includeSelectionSource?`<label>Selected Source<select data-filter="selectionSource" onchange="applyCandidateMultiFilters('${id}')"><option value="">All</option><option>Direct Selected</option><option>Selected from Client Shortlist</option></select></label>`:''}
   <div class="multi-filter-count" data-filter-count>${list.length} record${list.length===1?'':'s'} shown</div>
  </div>`;
 }
 function candidateFilterAttrs(c){
  const search=[c.id,c.fullName,c.passport,c.interview?.recommendedDesignation,c.designation,c.interview?.recommendedClient,c.agentName,c.agencyName,c.campaignNo,c.interview?.remarks,c.clientRemarks].filter(Boolean).join(' ').toLowerCase();
- return `data-filter-row="1" data-search="${esc(search)}" data-designation="${esc(c.interview?.recommendedDesignation||c.designation||'')}" data-result="${esc(c.interview?.result||stage(c))}" data-client="${esc(c.interview?.recommendedClient||'')}" data-agent="${esc(c.agencyName||c.agentName||'')}" data-campaign="${esc(c.campaignNo||'')}"`;
+ return `data-filter-row="1" data-search="${esc(search)}" data-designation="${esc(c.interview?.recommendedDesignation||c.designation||'')}" data-result="${esc(c.interview?.result||stage(c))}" data-client="${esc(c.interview?.recommendedClient||'')}" data-agent="${esc(c.agencyName||c.agentName||'')}" data-campaign="${esc(c.campaignNo||'')}" data-selection-source="${esc(selectedSource(c))}"`;
 }
 function applyCandidateMultiFilters(id){
  const box=document.getElementById(id+'Filters');const table=document.getElementById(id+'Table');if(!box||!table)return;
  const val=k=>String(box.querySelector(`[data-filter="${k}"]`)?.value||'').trim().toLowerCase();
- const q=val('search'),d=val('designation'),r=val('result'),cl=val('client'),a=val('agent'),cp=val('campaign');let shown=0;
- table.querySelectorAll('tbody tr[data-filter-row="1"]').forEach(row=>{const ok=(!q||row.dataset.search.includes(q))&&(!d||row.dataset.designation.toLowerCase()===d)&&(!r||row.dataset.result.toLowerCase()===r)&&(!cl||row.dataset.client.toLowerCase()===cl)&&(!a||row.dataset.agent.toLowerCase()===a)&&(!cp||row.dataset.campaign.toLowerCase()===cp);row.style.display=ok?'':'none';if(ok)shown++});
+ const q=val('search'),d=val('designation'),r=val('result'),cl=val('client'),a=val('agent'),cp=val('campaign'),ss=val('selectionSource');let shown=0;
+ table.querySelectorAll('tbody tr[data-filter-row="1"]').forEach(row=>{const ok=(!q||row.dataset.search.includes(q))&&(!d||row.dataset.designation.toLowerCase()===d)&&(!r||row.dataset.result.toLowerCase()===r)&&(!cl||row.dataset.client.toLowerCase()===cl)&&(!a||row.dataset.agent.toLowerCase()===a)&&(!cp||row.dataset.campaign.toLowerCase()===cp)&&(!ss||String(row.dataset.selectionSource||'').toLowerCase()===ss);row.style.display=ok?'':'none';if(ok)shown++});
  const cnt=box.querySelector('[data-filter-count]');if(cnt)cnt.textContent=shown+' record'+(shown===1?'':'s')+' shown';
 }
 function designationSummaryHTML(list){
@@ -599,7 +639,7 @@ function openTopDashboardList(type){
    return;
  }
 
- mainPanel.innerHTML=`<div class="panel-head"><h2>${title}</h2><span class="tag">${list.length} Record${list.length===1?'':'s'}</span></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateTable(list)}`;
+ mainPanel.innerHTML=`<div class="panel-head"><h2>${title}</h2><span class="tag">${list.length} Record${list.length===1?'':'s'}</span></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateTable(list,type==='selected')}`;
  setTimeout(()=>mainPanel.scrollIntoView({behavior:'smooth',block:'start'}),20);
 }
 
@@ -630,12 +670,32 @@ function editClientRemarks(id){
  if(!['interviewer','superuser','admin'].includes(userRole())){alert('You do not have permission to edit Client Remarks.');return}
  const c=candidates.find(x=>x.id===id);if(!c)return;
  if(c.interview?.result!=='Shortlisted for Client'){alert('Client Remarks can be edited only for candidates Shortlisted for Client.');return}
+ const canClientDecision=['interviewer','superuser'].includes(userRole());
  modalTitle.textContent='Client Remarks - '+c.fullName;
  modalBody.innerHTML=`
   <div class="details"><div><small>Candidate ID</small><b>${esc(c.id)}</b></div><div><small>Recommended Designation</small><b>${esc(c.interview?.recommendedDesignation||c.designation||'-')}</b></div><div><small>Recommended Client</small><b>${esc(c.interview?.recommendedClient||'-')}</b></div></div>
   <label>Remarks for Client<textarea id="clientRemarksInput" placeholder="Enter remarks to share with client...">${esc(c.clientRemarks||'')}</textarea></label>
+  ${canClientDecision?`<div class="actions" style="justify-content:flex-start"><button class="btn primary" onclick="setShortlistedClientDecision('${c.id}','Selected')">Selected</button><button class="btn danger" onclick="setShortlistedClientDecision('${c.id}','Rejected')">Rejected</button></div>`:''}
   <div class="actions"><button class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveClientRemarks('${c.id}')">Save Remarks</button></div>`;
  modalBg.classList.remove('hidden');
+}
+
+function setShortlistedClientDecision(id,result){
+ if(!['interviewer','superuser'].includes(userRole())){alert('You do not have permission to change the client decision.');return}
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ if(c.interview?.result!=='Shortlisted for Client'){alert('This candidate is no longer Shortlisted for Client.');return}
+ if(!['Selected','Rejected'].includes(result))return;
+ const message=result==='Selected'?'Are you sure you want to move this candidate to Selected?':'Are you sure you want to move this candidate to Rejected?';
+ if(!confirm(message))return;
+ const input=document.getElementById('clientRemarksInput');
+ if(input)c.clientRemarks=String(input.value||'').trim();
+ c.interview.result=result;
+ if(result==='Selected')c.selectionSource='Client Shortlist';
+ else if(result==='Rejected')delete c.selectionSource;
+ c.history=c.history||[];
+ c.history.push({date:new Date().toISOString(),text:'Client decision changed from Shortlisted for Client to '+result+' by '+currentUser.name+(c.clientRemarks?': '+c.clientRemarks:'')});
+ persist();closeModal();renderDashboard();openTopDashboardList(result==='Selected'?'selected':'rejected');
+ alert('Candidate moved to '+result+' successfully.');
 }
 
 function saveClientRemarks(id){
@@ -651,9 +711,9 @@ function saveClientRemarks(id){
 }
 function showHome(){const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;mainPanel.innerHTML=`<div class="panel-head"><h2>Recent Candidates - ${label}</h2><button class="btn secondary" onclick="showAllCandidates()">View All</button></div>${candidateTable(visibleCandidates().slice(0,8))}`}
 function showAllCandidates(){const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;mainPanel.innerHTML=`<div class="panel-head"><h2>All Candidates - ${label}</h2></div>${candidateTable(visibleCandidates())}`}
-function candidateTable(list){
+function candidateTable(list,includeSelectionSource=false){
  const tableId='candidateTable_'+Math.random().toString(36).slice(2,8);
- return `${candidateMultiFilterHTML(list,tableId)}<div class="table-wrap"><table id="${tableId}Table">
+ return `${candidateMultiFilterHTML(list,tableId,includeSelectionSource)}<div class="table-wrap"><table id="${tableId}Table">
   <thead><tr>
    <th>ID</th>
    <th>Date of Entry</th>
@@ -1262,7 +1322,7 @@ function showAgencyResults(){
 }
 function showAgencySelected(){
  const list=visibleCandidates().filter(selected);
- const tableId='agencySelected';mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateMultiFilterHTML(list,tableId)}<div class="table-wrap"><table id="${tableId}Table"><thead><tr><th>ID</th><th>Name</th><th>Designation</th><th>Recommended Client</th><th>Salary</th><th>Interview Remarks</th><th>Offer Status</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr ${candidateFilterAttrs(c)} class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${esc(c.interview?.recommendedClient||'-')}</td><td>AED ${c.interview.salary}</td><td class="interview-remarks-cell" title="${esc(c.interview?.remarks||'No interview remarks')}">${c.interview?.remarks?`<div class="interview-remarks-preview">${esc(c.interview.remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Awaiting Response')}</span></td><td>${esc(agencyProgressLabel(c))}</td><td><button class="eye" onclick="openAgencyProgress('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="9">No selected employees.</td></tr>'}</tbody></table></div>`
+ const tableId='agencySelected';mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateMultiFilterHTML(list,tableId,true)}<div class="table-wrap"><table id="${tableId}Table"><thead><tr><th>ID</th><th>Name</th><th>Designation</th><th>Recommended Client</th><th>Salary</th><th>Interview Remarks</th><th>Offer Status</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr ${candidateFilterAttrs(c)} class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${esc(c.interview?.recommendedClient||'-')}</td><td>AED ${c.interview.salary}</td><td class="interview-remarks-cell" title="${esc(c.interview?.remarks||'No interview remarks')}">${c.interview?.remarks?`<div class="interview-remarks-preview">${esc(c.interview.remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Awaiting Response')}</span></td><td>${esc(agencyProgressLabel(c))}</td><td><button class="eye" onclick="openAgencyProgress('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="9">No selected employees.</td></tr>'}</tbody></table></div>`
 }
 function agencyProgressLabel(c){const p=c.agencyProgress||{};if(p.travelled)return'Travelled to UAE';if(p.ticket)return'Ticket Booked';if(p.visa)return'Visa Received';if(p.signedOffer)return'Signed Offer Sent Back';if(p.offerReceived)return'Offer Letter Received';return'Pending'}
 function openAgencyProgress(id){
@@ -1497,7 +1557,7 @@ function openInterviewerProgress(id){
 
 function showAdminSelected(){
  const list=candidates.filter(selected);
- const tableId='adminSelected';mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees - Admin Processing</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateMultiFilterHTML(list,tableId)}<div class="table-wrap"><table id="${tableId}Table"><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Recommended Client</th><th>Salary</th><th>Interview Remarks</th><th>Offer Response</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr ${candidateFilterAttrs(c)} class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${esc(c.interview?.recommendedClient||'-')}</td><td>AED ${c.interview.salary}</td><td class="interview-remarks-cell" title="${esc(c.interview?.remarks||'No interview remarks')}">${c.interview?.remarks?`<div class="interview-remarks-preview">${esc(c.interview.remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Pending')}</span></td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="openAdminCandidate('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="11">No selected employees.</td></tr>'}</tbody></table></div>`
+ const tableId='adminSelected';mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees - Admin Processing</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateMultiFilterHTML(list,tableId,true)}<div class="table-wrap"><table id="${tableId}Table"><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Recommended Client</th><th>Salary</th><th>Interview Remarks</th><th>Offer Response</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr ${candidateFilterAttrs(c)} class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${esc(c.interview?.recommendedClient||'-')}</td><td>AED ${c.interview.salary}</td><td class="interview-remarks-cell" title="${esc(c.interview?.remarks||'No interview remarks')}">${c.interview?.remarks?`<div class="interview-remarks-preview">${esc(c.interview.remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Pending')}</span></td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="openAdminCandidate('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="11">No selected employees.</td></tr>'}</tbody></table></div>`
 }
 function adminLabel(c){
  if(c.admin?.visaResult==='Rejected')return 'Visa Rejected';
@@ -1640,7 +1700,7 @@ function printOffer(){const w=window.open('','','width=900,height=700');w.docume
 function openOps(type){
  currentOps=type;const ac=adminCounts(),map={selected:ac.selected,offerSend:ac.offerSend,offerReceive:ac.offerReceive,visa:ac.visa,ticket:ac.ticket,travel3:ac.travel3,uaeVisa:ac.uaeVisa},titles={selected:'Total Selected Employees',offerSend:'Pending Offer Letter Send',offerReceive:'Pending Signed Offer Received',visa:'Pending Visa Applied',ticket:'Pending Ticket Booking',travel3:'Travelling Within 3 Days',uaeVisa:'Pending UAE Visa Completion'};
  const list=map[type],tableId='opsList';
- mainPanel.innerHTML=`<div class="panel-head"><h2>${titles[type]}</h2></div>${candidateMultiFilterHTML(list,tableId)}<div class="table-wrap"><table id="${tableId}Table"><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Recommended Client</th><th>Travel Date</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr ${candidateFilterAttrs(c)}><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${esc(c.interview?.recommendedClient||'-')}</td><td>${c.admin?.travelDate||'-'}</td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="${['admin','superuser'].includes(userRole())?`openAdminCandidate('${c.id}')`:userRole()==='interviewer'?`openInterviewerProgress('${c.id}')`:`openCandidate('${c.id}')`}">⊙</button></td></tr>`).join('')||'<tr><td colspan="9">No employees found.</td></tr>'}</tbody></table></div>`;
+ mainPanel.innerHTML=`<div class="panel-head"><h2>${titles[type]}</h2></div>${candidateMultiFilterHTML(list,tableId,type==='selected')}<div class="table-wrap"><table id="${tableId}Table"><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Recommended Client</th><th>Travel Date</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr ${candidateFilterAttrs(c)}><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${esc(c.interview?.recommendedClient||'-')}</td><td>${c.admin?.travelDate||'-'}</td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="${['admin','superuser'].includes(userRole())?`openAdminCandidate('${c.id}')`:userRole()==='interviewer'?`openInterviewerProgress('${c.id}')`:`openCandidate('${c.id}')`}">⊙</button></td></tr>`).join('')||'<tr><td colspan="9">No employees found.</td></tr>'}</tbody></table></div>`;
 }
 
 function showCampaignReports(){
