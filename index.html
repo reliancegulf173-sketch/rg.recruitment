@@ -29,7 +29,7 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 .content{padding:24px 28px}
 .dashboard-filter{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:16px}
 .dashboard-filter label{margin:0;font-size:13px}
-.dashboard-filter select{width:280px;margin:0}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}.card,.panel{background:#fff;border:1px solid var(--line);border-radius:12px}
+.dashboard-filter select{width:280px;margin:0}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}.card,.panel{background:#fff;border:1px solid var(--line);border-radius:12px}
 .card{padding:16px;display:flex;gap:14px;align-items:center;cursor:pointer;transition:.2s}.card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(20,55,95,.12);border-color:#9db9e5}.card-icon{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:27px}.cblue{background:#e9f1ff}.cgreen{background:#eaf8ef}.corange{background:#fff0df}.cpurple{background:#efeaff}.cred{background:#ffe7e7}
 .designation-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 18px}
 .designation-summary-card{background:#f8faff;border:1px solid var(--line);border-radius:10px;padding:13px}
@@ -154,7 +154,8 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
     <div class="card" onclick="openTopDashboardList('interview')"><div class="card-icon cgreen">🗓</div><div><small>Available for Interview</small><strong id="topInterview">0</strong></div></div>
     <div class="card" onclick="openTopDashboardList('selected')"><div class="card-icon corange">🏆</div><div><small>Selected</small><strong id="topSelected">0</strong></div></div>
     <div class="card" onclick="openTopDashboardList('rejected')"><div class="card-icon cred">❌</div><div><small>Rejected</small><strong id="topRejected">0</strong></div></div>
-    <div class="card" onclick="openTopDashboardList('reached')"><div class="card-icon cpurple">✈️</div><div><small>Reached UAE</small><strong id="topReached">0</strong></div></div>
+    <div class="card" onclick="openTopDashboardList('shortlisted')"><div class="card-icon cpurple">📋</div><div><small>Shortlisted for Client</small><strong id="topShortlisted">0</strong></div></div>
+    <div class="card" onclick="openTopDashboardList('reached')"><div class="card-icon cgreen">✈️</div><div><small>Reached UAE</small><strong id="topReached">0</strong></div></div>
   </section>
 
   <section id="opsDashboard" class="ops hidden">
@@ -429,7 +430,7 @@ function changeDashboardCampaign(value){
  showHome();
 }
 function selected(c){return !c.processStopped&&c.interview?.result==='Selected'}
-function available(c){return !c.processStopped&&(!c.interview || !['Selected','Rejected','Hold','Absent','Second Interview','Negotiation'].includes(c.interview.result))}
+function available(c){return !c.processStopped&&(!c.interview || !['Selected','Rejected','Shortlisted for Client','Absent'].includes(c.interview.result))}
 function bool(v){return v===true}
 function within3(date){if(!date)return false;const d=new Date(date+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);const e=new Date(t);e.setDate(e.getDate()+3);return d>=t&&d<=e}
 
@@ -450,7 +451,7 @@ function adminCounts(){
 function renderDashboard(){
  refreshDashboardCampaignFilter();
  const list=visibleCandidates(),ac=adminCounts();
- topTotal.textContent=list.length;topInterview.textContent=list.filter(available).length;topSelected.textContent=list.filter(selected).length;topRejected.textContent=list.filter(c=>c.interview?.result==='Rejected').length;topReached.textContent=list.filter(c=>bool(c.admin?.reachedUAE)).length;
+ topTotal.textContent=list.length;topInterview.textContent=list.filter(available).length;topSelected.textContent=list.filter(selected).length;topRejected.textContent=list.filter(c=>c.interview?.result==='Rejected').length;topShortlisted.textContent=list.filter(c=>!c.processStopped&&c.interview?.result==='Shortlisted for Client').length;topReached.textContent=list.filter(c=>bool(c.admin?.reachedUAE)).length;
  pAdded.textContent=list.filter(c=>!c.interview).length;pInterview.textContent=list.filter(available).length;pSelected.textContent=list.filter(selected).length;pReached.textContent=list.filter(c=>bool(c.admin?.reachedUAE)).length;
  const opsAllowed=['admin','superuser','interviewer'].includes(userRole());opsDashboard.classList.toggle('hidden',!opsAllowed);
  if(opsAllowed){opsSelected.textContent=ac.selected.length;opsOfferSend.textContent=ac.offerSend.length;opsOfferReceive.textContent=ac.offerReceive.length;opsVisa.textContent=ac.visa.length;opsTicket.textContent=ac.ticket.length;opsTravel3.textContent=ac.travel3.length;opsUaeVisa.textContent=ac.uaeVisa.length}
@@ -511,6 +512,7 @@ function topDashboardFilteredList(type){
  if(type==='interview')return list.filter(available);
  if(type==='selected')return list.filter(selected);
  if(type==='rejected')return list.filter(c=>c.interview?.result==='Rejected');
+ if(type==='shortlisted')return list.filter(c=>!c.processStopped&&c.interview?.result==='Shortlisted for Client');
  if(type==='reached')return list.filter(c=>!!c.admin?.reachedUAE);
  return list;
 }
@@ -520,6 +522,7 @@ function topDashboardTitle(type){
   interview:'Available for Interview',
   selected:'Selected Employees',
   rejected:'Rejected Candidates',
+  shortlisted:'Shortlisted for Client',
   reached:'Employees Reached UAE'
  }[type]||'Candidates';
 }
@@ -561,9 +564,58 @@ function openTopDashboardList(type){
    showInterviewWorkspace();
    return;
  }
+ if(type==='shortlisted'){
+   showShortlistedForClientList(list,title);
+   return;
+ }
 
  mainPanel.innerHTML=`<div class="panel-head"><h2>${title}</h2><span class="tag">${list.length} Record${list.length===1?'':'s'}</span></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateTable(list)}`;
  setTimeout(()=>mainPanel.scrollIntoView({behavior:'smooth',block:'start'}),20);
+}
+
+function showShortlistedForClientList(list,title){
+ const canEditClientRemarks=['interviewer','superuser','admin'].includes(userRole());
+ mainPanel.innerHTML=`<div class="panel-head"><h2>${esc(title)}</h2><span class="tag">${list.length} Record${list.length===1?'':'s'}</span></div>
+ <h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}
+ <div class="table-wrap"><table>
+  <thead><tr><th>ID</th><th>Name</th><th>Passport</th><th>Campaign</th><th>Agent Name</th><th>Designation</th><th>Interview Remarks</th><th>Client Remarks</th><th>Action</th></tr></thead>
+  <tbody>${list.map(c=>{
+   const interviewRemarks=String(c.interview?.remarks||'').trim();
+   const clientRemarks=String(c.clientRemarks||'').trim();
+   return `<tr>
+    <td><b>${esc(c.id)}</b></td><td>${esc(c.fullName)}</td><td>${esc(c.passport||'-')}</td><td>${esc(c.campaignNo||'-')}</td><td>${esc(c.agentName||c.agencyName||'-')}</td>
+    <td>${esc(c.interview?.recommendedDesignation||c.designation||'-')}</td>
+    <td class="interview-remarks-cell" title="${esc(interviewRemarks||'No interview remarks')}">${interviewRemarks?`<div class="interview-remarks-preview">${esc(interviewRemarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td>
+    <td class="interview-remarks-cell" title="${esc(clientRemarks||'No client remarks')}">${clientRemarks?`<div class="interview-remarks-preview">${esc(clientRemarks)}</div>`:'<span class="interview-remarks-empty">No client remarks</span>'}</td>
+    <td>${canEditClientRemarks?`<button class="btn secondary" onclick="editClientRemarks('${c.id}')">Edit</button>`:`<button class="eye" onclick="openCandidate('${c.id}')">⊙</button>`}</td>
+   </tr>`;
+  }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">No shortlisted candidates found.</td></tr>'}</tbody>
+ </table></div>`;
+ setTimeout(()=>mainPanel.scrollIntoView({behavior:'smooth',block:'start'}),20);
+}
+
+function editClientRemarks(id){
+ if(!['interviewer','superuser','admin'].includes(userRole())){alert('You do not have permission to edit Client Remarks.');return}
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ if(c.interview?.result!=='Shortlisted for Client'){alert('Client Remarks can be edited only for candidates Shortlisted for Client.');return}
+ modalTitle.textContent='Client Remarks - '+c.fullName;
+ modalBody.innerHTML=`
+  <div class="details"><div><small>Candidate ID</small><b>${esc(c.id)}</b></div><div><small>Recommended Designation</small><b>${esc(c.interview?.recommendedDesignation||c.designation||'-')}</b></div></div>
+  <label>Remarks for Client<textarea id="clientRemarksInput" placeholder="Enter remarks to share with client...">${esc(c.clientRemarks||'')}</textarea></label>
+  <div class="actions"><button class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveClientRemarks('${c.id}')">Save Remarks</button></div>`;
+ modalBg.classList.remove('hidden');
+}
+
+function saveClientRemarks(id){
+ if(!['interviewer','superuser','admin'].includes(userRole())){alert('You do not have permission to edit Client Remarks.');return}
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ const input=document.getElementById('clientRemarksInput');if(!input)return;
+ const previous=String(c.clientRemarks||'').trim();
+ const value=String(input.value||'').trim();
+ c.clientRemarks=value;
+ c.history=c.history||[];
+ c.history.push({date:new Date().toISOString(),text:(previous?'Client remarks updated':'Client remarks added')+' by '+currentUser.name+(value?': '+value:'')});
+ persist();closeModal();renderDashboard();openTopDashboardList('shortlisted');alert('Client Remarks saved successfully.');
 }
 function showHome(){const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;mainPanel.innerHTML=`<div class="panel-head"><h2>Recent Candidates - ${label}</h2><button class="btn secondary" onclick="showAllCandidates()">View All</button></div>${candidateTable(visibleCandidates().slice(0,8))}`}
 function showAllCandidates(){const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;mainPanel.innerHTML=`<div class="panel-head"><h2>All Candidates - ${label}</h2></div>${candidateTable(visibleCandidates())}`}
@@ -609,6 +661,7 @@ function stage(c){
  if(c.offerResponse?.status==='Rejected')return 'Offer Rejected';
  if(c.offerResponse?.status==='Negotiation Required')return 'Offer Negotiation';
  if(c.interview?.result==='Selected')return c.admin?.reachedUAE?'Reached UAE':'Selected';
+ if(c.interview?.result==='Shortlisted for Client')return 'Shortlisted for Client';
  if(c.interview?.result)return c.interview.result;
  if(c.interview)return 'Interview Pending';
  return 'Employee Added'
@@ -619,7 +672,7 @@ function calcAge(d){if(!d)return'';const dob=new Date(d+'T00:00:00'),t=new Date(
 function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function candidateEntryDate(c){const raw=c?.dateOfEntry||(c?.history?.[0]?.date||'').slice(0,10);if(!raw)return'-';const parts=String(raw).slice(0,10).split('-');return parts.length===3?parts[2]+'/'+parts[1]+'/'+parts[0]:raw}
 function agencyCampaigns(){return availableCampaignsForDashboard().filter(c=>c.status==='Open')}
-const crafts=['Pipe Fabricator','Pipe Fitter','Structural Fabricator','Structural Fitter','Welder - GTAW/SMAW','Welder - SMAW','Welder - FCAW','Mechanical Technician','Mechanical Foreman','Mechanical Supervisor','Piping Supervisor','Rigger','Rigging Supervisor','Scaffolder','Scaffolding Supervisor','Millwright Fitter','Equipment Fitter','Valve Technician','Machinist','Grinder','Helper'];
+const crafts=['Pipe Fabricator','Pipe Fitter','Structural Fabricator','Structural Fitter','Welder - GTAW/SMAW','Welder - SMAW','Welder - FCAW','Mechanical Technician','Mechanical Foreman','Mechanical Supervisor','Piping Supervisor','Rigger','Rigging Supervisor','Scaffolder','Scaffolding Supervisor','Millwright Fitter','Equipment Fitter','Valve Technician','Machinist','Grinder','Helper','Pipeline Engineer','Senior Pipeline Engineer','Electrical Engineer','Senior E&I','Instrument Engineer','Quantity Surveyor','Senior Civil Engineer','Site Surveyor','Civil Engineer','As Built Coordinator','Mechanical Engineer "Rotating"','Mechanical Engineer "Static"','Piping Engineer','Senior Mechanical Engineer','Senior Piping Engineer','Ohl Engineer','Senior Electrical Engineer','Senior Ohl','Senior Instrument Engineer','Telecom Engineer','Fire & Gas Engineer','Hvac Engineer','Senior Mechanical Engineer Rotating','Senior Mechanical Engineer Static','Mechanical Engineer "Tanks"'];
 
 function openAddCandidate(){
  const role=userRole();
@@ -1054,12 +1107,12 @@ function selectForInterview(id){
     ${[['Technical Knowledge','technical'],['Practical Skill','practical'],['Safety Knowledge','safety'],['Communication - English','english'],['Communication - Hindi','hindi']].map(x=>`<div class="rating-row"><label>${x[0]}</label><select name="${x[1]}" required${dis}><option value="">Select</option>${['Excellent','Good','Average','Poor'].map(v=>`<option${sel(v,iv[x[1]])}>${v}</option>`).join('')}</select></div>`).join('')}
 
     <div class="form-grid">
-     <label>Recommended Designation<select name="recommendedDesignation" required${dis}><option value="">Select</option>${crafts.map(x=>`<option${sel(x,iv.recommendedDesignation)}>${x}</option>`).join('')}</select></label>
+     <label>Recommended Designation<select name="recommendedDesignation" id="interviewRecommendedDesignation" required${dis} onchange="interviewCustomDesignation.classList.toggle('hidden',this.value!=='ADD_MORE')"><option value="">Select</option>${crafts.map(x=>`<option${sel(x,iv.recommendedDesignation)}>${x}</option>`).join('')}<option value="ADD_MORE"${iv.recommendedDesignation&&!crafts.includes(iv.recommendedDesignation)?' selected':''}>Other / Add Manually</option></select><input id="interviewCustomDesignation" name="customRecommendedDesignation" class="${iv.recommendedDesignation&&!crafts.includes(iv.recommendedDesignation)?'':'hidden'}" value="${iv.recommendedDesignation&&!crafts.includes(iv.recommendedDesignation)?esc(iv.recommendedDesignation):''}" placeholder="Enter recommended designation manually"${dis}></label>
      <label>Recommended Salary - AED<input name="salary" type="number" min="0" value="${Number(iv.salary||0)}" required${dis}></label>
     </div>
 
     <label>Interview Remarks<textarea name="remarks" required placeholder="Record technical observations, strengths, weaknesses and suitability..."${dis}>${esc(iv.remarks||'')}</textarea></label>
-    <label>Interview Result<select name="result" required${dis}><option value="">Select</option>${['Selected','Rejected','Hold','Second Interview','Negotiation'].map(v=>`<option${sel(v,iv.result)}>${v}</option>`).join('')}</select></label>
+    <label>Interview Result<select name="result" required${dis}><option value="">Select</option>${['Selected','Rejected','Shortlisted for Client'].map(v=>`<option${sel(v,iv.result)}>${v}</option>`).join('')}</select></label>
 
     <div class="actions">
      <button id="saveInterviewBtn" class="btn primary" ${locked?'style="display:none"':''}>${isSaved?'Save Result':'Save Result'}</button>
@@ -1084,9 +1137,10 @@ function selectForInterview(id){
    date:f.get('date'),type:f.get('type'),attendance:att,
    technical:f.get('technical'),practical:f.get('practical'),safety:f.get('safety'),
    english:f.get('english'),hindi:f.get('hindi'),
-   recommendedDesignation:f.get('recommendedDesignation'),salary:Number(f.get('salary')||0),
+   recommendedDesignation:f.get('recommendedDesignation')==='ADD_MORE'?(f.get('customRecommendedDesignation')||'').trim():f.get('recommendedDesignation'),salary:Number(f.get('salary')||0),
    remarks:f.get('remarks'),result:att==='No'?'Absent':f.get('result')
   };
+  if(!newInterview.recommendedDesignation){alert('Please enter the Recommended Designation.');return}
   c.interview=newInterview;
   c.interviewHistory=c.interviewHistory||[];
   c.interviewHistory.push({date:new Date().toISOString(),previousResult,newResult:newInterview.result,changedBy:currentUser.name,stopReason:''});
@@ -1150,7 +1204,7 @@ function resumeCandidateProcess(id){
  persist();renderDashboard();showInterviewWorkspace();alert('Candidate process resumed.');
 }
 function showAgencyResults(){
- const list=visibleCandidates().filter(c=>c.interview&&['Selected','Rejected','Hold','Second Interview','Negotiation','Absent'].includes(c.interview.result));
+ const list=visibleCandidates().filter(c=>c.interview&&['Selected','Rejected','Shortlisted for Client','Absent'].includes(c.interview.result));
  mainPanel.innerHTML=`<div class="panel-head"><h2>Interview Results</h2></div>${candidateTable(list)}`
 }
 function showAgencySelected(){
@@ -1533,7 +1587,7 @@ function printOffer(){const w=window.open('','','width=900,height=700');w.docume
 function openOps(type){currentOps=type;const ac=adminCounts(),map={selected:ac.selected,offerSend:ac.offerSend,offerReceive:ac.offerReceive,visa:ac.visa,ticket:ac.ticket,travel3:ac.travel3,uaeVisa:ac.uaeVisa},titles={selected:'Total Selected Employees',offerSend:'Pending Offer Letter Send',offerReceive:'Pending Signed Offer Received',visa:'Pending Visa Applied',ticket:'Pending Ticket Booking',travel3:'Travelling Within 3 Days',uaeVisa:'Pending UAE Visa Completion'};mainPanel.innerHTML=`<div class="panel-head"><h2>${titles[type]}</h2></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Travel Date</th><th>Progress</th><th>Action</th></tr></thead><tbody>${map[type].map(c=>`<tr><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${c.admin?.travelDate||'-'}</td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="${['admin','superuser'].includes(userRole())?`openAdminCandidate('${c.id}')`:userRole()==='interviewer'?`openInterviewerProgress('${c.id}')`:`openCandidate('${c.id}')`}">⊙</button></td></tr>`).join('')||'<tr><td colspan="8">No employees found.</td></tr>'}</tbody></table></div>`}
 
 function showCampaignReports(){
- const list=visibleCandidates(),groups={};list.forEach(c=>(groups[c.campaignNo]??=[]).push(c));mainPanel.innerHTML=`<div class="panel-head"><h2>Campaign Reports</h2></div><div class="table-wrap"><table><thead><tr><th>Campaign</th><th>Total</th><th>Interview Pending</th><th>Selected</th><th>Rejected</th><th>Hold</th><th>Reached UAE</th></tr></thead><tbody>${Object.entries(groups).map(([k,a])=>`<tr><td><b>${k}</b></td><td>${a.length}</td><td>${a.filter(available).length}</td><td>${a.filter(selected).length}</td><td>${a.filter(c=>c.interview?.result==='Rejected').length}</td><td>${a.filter(c=>c.interview?.result==='Hold').length}</td><td>${a.filter(c=>c.admin?.reachedUAE).length}</td></tr>`).join('')||'<tr><td colspan="7">No campaign data.</td></tr>'}</tbody></table></div>`
+ const list=visibleCandidates(),groups={};list.forEach(c=>(groups[c.campaignNo]??=[]).push(c));mainPanel.innerHTML=`<div class="panel-head"><h2>Campaign Reports</h2></div><div class="table-wrap"><table><thead><tr><th>Campaign</th><th>Total</th><th>Interview Pending</th><th>Selected</th><th>Rejected</th><th>Shortlisted for Client</th><th>Reached UAE</th></tr></thead><tbody>${Object.entries(groups).map(([k,a])=>`<tr><td><b>${k}</b></td><td>${a.length}</td><td>${a.filter(available).length}</td><td>${a.filter(selected).length}</td><td>${a.filter(c=>c.interview?.result==='Rejected').length}</td><td>${a.filter(c=>c.interview?.result==='Shortlisted for Client').length}</td><td>${a.filter(c=>c.admin?.reachedUAE).length}</td></tr>`).join('')||'<tr><td colspan="7">No campaign data.</td></tr>'}</tbody></table></div>`
 }
 
 function showUsers(){
