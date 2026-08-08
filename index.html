@@ -98,6 +98,10 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 .interview-remarks-cell{min-width:220px;max-width:340px;white-space:normal!important;line-height:1.4}
 .interview-remarks-preview{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
 .interview-remarks-empty{color:var(--muted)}
+.process-stopped-banner{padding:13px;border-radius:9px;background:#ffe5e5;border:1px solid #e35b5b;color:#9d1f1f;font-weight:700;margin:12px 0}
+.process-stopped-item{background:#fff0f0!important;border-left:4px solid var(--red)}
+.interview-saved-item{background:#f3f8ff}
+.interview-history-table td,.interview-history-table th{white-space:normal!important;vertical-align:top}
 @media print{
  .sidebar,.topbar,.dashboard-filter,.cards,.ops,.grid2,.export-toolbar,.modal-bg{display:none!important}
  .app{display:block!important}.main{display:block!important}.content{padding:0!important}
@@ -424,8 +428,8 @@ function changeDashboardCampaign(value){
  renderDashboard();
  showHome();
 }
-function selected(c){return c.interview?.result==='Selected'}
-function available(c){return !c.interview || !['Selected','Rejected','Hold','Absent'].includes(c.interview.result)}
+function selected(c){return !c.processStopped&&c.interview?.result==='Selected'}
+function available(c){return !c.processStopped&&(!c.interview || !['Selected','Rejected','Hold','Absent','Second Interview','Negotiation'].includes(c.interview.result))}
 function bool(v){return v===true}
 function within3(date){if(!date)return false;const d=new Date(date+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);const e=new Date(t);e.setDate(e.getDate()+3);return d>=t&&d<=e}
 
@@ -473,7 +477,7 @@ function buildNav(){
  if(r==='interviewer')items.push(['🗓','Manpower Available for Interview','interviewWorkspace'],['🏆','Selected Employees Status','selectedOps']);
  if(r==='admin')items.push(['＋','Add New Employee','addCandidate']);
  if(['admin','superuser'].includes(r))items.push(['🏆','Selected Employees','adminSelected'],['📄','Offer Letters','adminSelected']);
- if(r==='superuser')items.push(['⚙','User Management','users'],['🗂','Campaign Management','campaigns'],['🗑','Clear Testing Data','clearTesting']);
+ if(r==='superuser')items.push(['⚙','User Management','users'],['🗂','','campaigns'],['🗑','Clear Testing Data','clearTesting']);
  navMenu.innerHTML=items.map((i,idx)=>`<button type="button" class="${idx===0?'active':''}" data-nav-action="${i[2]}"><span class="icon">${i[0]}</span>${i[1]}</button>`).join('');
 }
 
@@ -598,6 +602,7 @@ function candidateTable(list){
  </table></div>`;
 }
 function stage(c){
+ if(c.processStopped)return 'PROCESS STOPPED';
  if(c.admin?.visaResult==='Rejected')return 'Visa Rejected';
  if(c.admin?.visaResult==='Received')return c.admin?.ticketBooked?'Ticket Booked':'Visa Received';
  if(c.offerResponse?.status==='Accepted')return 'Offer Accepted';
@@ -881,7 +886,7 @@ let interviewDesignationFilter='ALL';
 function showInterviewWorkspace(){
  if(userRole()!=='interviewer'){alert('Interviewer only.');return}
 
- const interviewerList=visibleCandidates().filter(available);
+ const interviewerList=visibleCandidates();
  const designationCounts=interviewerList.reduce((acc,c)=>{
   const designation=String(c.designation||'Not Specified').trim()||'Not Specified';
   acc[designation]=(acc[designation]||0)+1;
@@ -902,8 +907,8 @@ function showInterviewWorkspace(){
   <div class="interview-workspace-grid">
    <div class="interview-summary-wrap">
     <div class="panel-head">
-     <h2>Available for Interview — Designation-wise Summary</h2>
-     <span class="tag">${interviewerList.length} Total Available</span>
+     <h2>Interview Candidates — Designation-wise Summary</h2>
+     <span class="tag">${interviewerList.length} Total Candidates</span>
     </div>
     <div class="interview-designation-summary">
      <button type="button" class="interview-designation-card active" data-designation="ALL" onclick="setInterviewDesignationFilter('ALL')">
@@ -916,8 +921,8 @@ function showInterviewWorkspace(){
 
    <div>
     <div class="panel-head">
-     <h2>Manpower Available for Interview</h2>
-     <span id="interviewAvailableCount" class="tag">${interviewerList.length} Available</span>
+     <h2>Manpower Interview List</h2>
+     <span id="interviewAvailableCount" class="tag">${interviewerList.length} Candidates</span>
     </div>
     <input id="interviewSearch" placeholder="Search by name, passport or designation..." oninput="renderInterviewList()">
     <div id="interviewList" class="list-box" style="margin-top:12px"></div>
@@ -949,24 +954,26 @@ function renderInterviewList(){
 
  const q=String(searchEl.value||'').toLowerCase().trim();
 
- const list=visibleCandidates().filter(available).filter(c=>{
+ const list=visibleCandidates().filter(c=>{
   const matchesDesignation=interviewDesignationFilter==='ALL'||String(c.designation||'Not Specified')===interviewDesignationFilter;
   const searchText=[c.fullName,c.passport,c.designation,c.campaignNo,c.agencyName,c.agentName].map(v=>String(v||'').toLowerCase()).join(' ');
   return matchesDesignation&&searchText.includes(q);
  });
 
  const countEl=document.getElementById('interviewAvailableCount');
- if(countEl)countEl.textContent=`${list.length} Available`;
+ if(countEl)countEl.textContent=`${list.length} Candidates`;
 
  listEl.innerHTML=list.map(c=>`
-  <div class="list-item" data-candidate-id="${esc(c.id)}" onclick="selectForInterview('${c.id}')">
+  <div class="list-item ${c.processStopped?'process-stopped-item':c.interview?'interview-saved-item':''}" data-candidate-id="${esc(c.id)}" onclick="selectForInterview('${c.id}')">
    <b>${esc(c.fullName)}</b>
-   <small>${esc(c.passport)} · ${esc(c.designation)} · ${esc(c.campaignNo)}</small>
-  </div>`).join('')||'<div style="padding:20px;color:var(--muted)">No manpower available for this designation.</div>';
+   <small>${esc(c.passport)} · ${esc(c.designation)} · ${esc(c.campaignNo)} · <b>${esc(stage(c))}</b></small>
+  </div>`).join('')||'<div style="padding:20px;color:var(--muted)">No manpower found for this designation.</div>';
 }
 function ratingOptions(){return '<option value="">Select</option><option>Excellent</option><option>Good</option><option>Average</option><option>Poor</option>'}
 function selectForInterview(id){
  const c=candidates.find(x=>x.id===id);if(!c)return;
+ c.history=c.history||[];
+ c.interviewHistory=c.interviewHistory||[];
 
  document.querySelectorAll('#interviewList .list-item').forEach(item=>{
   item.classList.toggle('active',item.dataset.candidateId===String(id));
@@ -976,11 +983,18 @@ function selectForInterview(id){
   if(value===0)return '0';
   return value===undefined||value===null||String(value).trim()===''?'—':esc(value);
  };
+ const iv=c.interview||{};
+ const isSaved=!!c.interview;
+ const locked=isSaved;
+ const sel=(value,current)=>String(value||'')===String(current||'')?' selected':'';
+ const dis=locked?' disabled':'';
+ const historyRows=(c.interviewHistory||[]).slice().reverse().map(h=>`<tr><td>${esc(h.date||'-')}</td><td>${esc(h.previousResult||'-')}</td><td>${esc(h.newResult||'-')}</td><td>${esc(h.changedBy||'-')}</td><td>${esc(h.stopReason||'-')}</td></tr>`).join('');
 
  interviewFormArea.innerHTML=`
  <div class="interview-candidate-layout">
   <aside class="candidate-bio-card">
    <h3>👤 Candidate Bio Data</h3>
+   ${c.processStopped?`<div class="process-stopped-banner">⛔ PROCESS STOPPED<br><small>Reason: ${esc(c.stopReason||'-')}<br>Stopped by: ${esc(c.stoppedBy||'-')} · ${esc(c.stoppedAt||'-')}</small></div>`:''}
 
    <div class="candidate-bio-section">
     <h4>Personal Information</h4>
@@ -1016,13 +1030,8 @@ function selectForInterview(id){
     <div class="candidate-bio-row"><span>Campaign</span><b>${showValue(c.campaignNo)}</b></div>
     <div class="candidate-bio-row"><span>Campaign Name</span><b>${showValue(c.campaignName)}</b></div>
     <div class="candidate-bio-row"><span>Date of Entry</span><b>${showValue(candidateEntryDate(c))}</b></div>
+    <div class="candidate-bio-row"><span>Current Status</span><b>${showValue(stage(c))}</b></div>
    </div>
-
-   ${c.interview?.remarks?`
-   <div class="candidate-bio-section">
-    <h4>Previous Interview Note</h4>
-    <div style="font-size:13px;line-height:1.5">${esc(c.interview.remarks)}</div>
-   </div>`:''}
   </aside>
 
   <section class="interview-form-card">
@@ -1031,57 +1040,117 @@ function selectForInterview(id){
      <h2 style="margin-bottom:4px">${esc(c.fullName)}</h2>
      <small style="color:var(--muted)">${esc(c.designation)} · ${esc(c.passport)}</small>
     </div>
-    <span class="tag">${esc(c.campaignNo)}</span>
+    <span class="tag">${esc(stage(c))}</span>
    </div>
 
    <form id="interviewForm">
     <div class="form-grid">
-     <label>Interview Date<input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required></label>
-     <label>Interview Type<select name="type" required><option value="">Select</option><option>Physical</option><option>Telephonic</option><option>Video Call</option></select></label>
-     <label>Attendance<select name="attendance" required><option value="">Select</option><option>Yes</option><option>No</option></select></label>
+     <label>Interview Date<input name="date" type="date" value="${esc(iv.date||todayISO())}" required${dis}></label>
+     <label>Interview Type<select name="type" required${dis}><option value="">Select</option><option${sel('Physical',iv.type)}>Physical</option><option${sel('Telephonic',iv.type)}>Telephonic</option><option${sel('Video Call',iv.type)}>Video Call</option></select></label>
+     <label>Attendance<select name="attendance" required${dis}><option value="">Select</option><option${sel('Yes',iv.attendance)}>Yes</option><option${sel('No',iv.attendance)}>No</option></select></label>
     </div>
 
     <h3>Evaluation</h3>
-    ${[['Technical Knowledge','technical'],['Practical Skill','practical'],['Safety Knowledge','safety'],['Communication - English','english'],['Communication - Hindi','hindi']].map(x=>`<div class="rating-row"><label>${x[0]}</label><select name="${x[1]}" required>${ratingOptions()}</select></div>`).join('')}
+    ${[['Technical Knowledge','technical'],['Practical Skill','practical'],['Safety Knowledge','safety'],['Communication - English','english'],['Communication - Hindi','hindi']].map(x=>`<div class="rating-row"><label>${x[0]}</label><select name="${x[1]}" required${dis}><option value="">Select</option>${['Excellent','Good','Average','Poor'].map(v=>`<option${sel(v,iv[x[1]])}>${v}</option>`).join('')}</select></div>`).join('')}
 
     <div class="form-grid">
-     <label>Recommended Designation<select name="recommendedDesignation" required><option value="">Select</option>${crafts.map(x=>`<option>${x}</option>`).join('')}</select></label>
-     <label>Recommended Salary - AED<input name="salary" type="number" min="0" required></label>
+     <label>Recommended Designation<select name="recommendedDesignation" required${dis}><option value="">Select</option>${crafts.map(x=>`<option${sel(x,iv.recommendedDesignation)}>${x}</option>`).join('')}</select></label>
+     <label>Recommended Salary - AED<input name="salary" type="number" min="0" value="${Number(iv.salary||0)}" required${dis}></label>
     </div>
 
-    <label>Interview Remarks<textarea name="remarks" required placeholder="Record technical observations, strengths, weaknesses and suitability..."></textarea></label>
-    <label>Interview Result<select name="result" required><option value="">Select</option><option>Selected</option><option>Rejected</option><option>Hold</option></select></label>
-    <div class="actions"><button class="btn primary">Save Interview</button></div>
+    <label>Interview Remarks<textarea name="remarks" required placeholder="Record technical observations, strengths, weaknesses and suitability..."${dis}>${esc(iv.remarks||'')}</textarea></label>
+    <label>Interview Result<select name="result" required${dis}><option value="">Select</option>${['Selected','Rejected','Hold','Second Interview','Negotiation'].map(v=>`<option${sel(v,iv.result)}>${v}</option>`).join('')}</select></label>
+
+    <div class="actions">
+     <button id="saveInterviewBtn" class="btn primary" ${locked?'style="display:none"':''}>${isSaved?'Save Result':'Save Result'}</button>
+     ${isSaved?`<button id="editInterviewBtn" type="button" class="btn secondary" onclick="enableInterviewEdit('${c.id}')">Edit Result</button>`:''}
+     ${c.processStopped?`<button type="button" class="btn primary" onclick="resumeCandidateProcess('${c.id}')">Resume Process</button>`:`<button type="button" class="btn danger" onclick="openStopProcessModal('${c.id}')">Stop Process</button>`}
+    </div>
    </form>
+
+   <div class="candidate-bio-section">
+    <h4>Interview Change History</h4>
+    <div class="table-wrap"><table class="interview-history-table"><thead><tr><th>Date & Time</th><th>Previous Result</th><th>New Result</th><th>Changed By</th><th>Stop Reason</th></tr></thead><tbody>${historyRows||'<tr><td colspan="5">No changes recorded yet.</td></tr>'}</tbody></table></div>
+   </div>
   </section>
  </div>`;
 
  interviewForm.onsubmit=e=>{
   e.preventDefault();
+  if(c.processStopped){alert('This candidate process is stopped. Resume Process before saving a new interview result.');return}
   const f=new FormData(e.target),att=f.get('attendance');
-  c.interview={
-   date:f.get('date'),
-   type:f.get('type'),
-   attendance:att,
-   technical:f.get('technical'),
-   practical:f.get('practical'),
-   safety:f.get('safety'),
-   english:f.get('english'),
-   hindi:f.get('hindi'),
-   recommendedDesignation:f.get('recommendedDesignation'),
-   salary:Number(f.get('salary')||0),
-   remarks:f.get('remarks'),
-   result:att==='No'?'Absent':f.get('result')
+  const previousResult=c.interview?.result||'Not Saved';
+  const newInterview={
+   date:f.get('date'),type:f.get('type'),attendance:att,
+   technical:f.get('technical'),practical:f.get('practical'),safety:f.get('safety'),
+   english:f.get('english'),hindi:f.get('hindi'),
+   recommendedDesignation:f.get('recommendedDesignation'),salary:Number(f.get('salary')||0),
+   remarks:f.get('remarks'),result:att==='No'?'Absent':f.get('result')
   };
-  c.history.push({date:new Date().toISOString(),text:'Interview result '+c.interview.result+' by '+currentUser.name});
-  persist();
-  renderDashboard();
-  showInterviewWorkspace();
-  alert('Interview saved.');
- }
+  c.interview=newInterview;
+  c.interviewHistory=c.interviewHistory||[];
+  c.interviewHistory.push({date:new Date().toISOString(),previousResult,newResult:newInterview.result,changedBy:currentUser.name,stopReason:''});
+  c.history.push({date:new Date().toISOString(),text:(previousResult==='Not Saved'?'Interview result saved: ':'Interview result changed from '+previousResult+' to ')+newInterview.result+' by '+currentUser.name});
+  persist();renderDashboard();showInterviewWorkspace();alert(previousResult==='Not Saved'?'Interview saved.':'Interview result updated successfully.');
+ };
+}
+
+function enableInterviewEdit(id){
+ const c=candidates.find(x=>x.id===id);if(!c||!c.interview)return;
+ if(c.processStopped){alert('Resume Process before editing the interview result.');return}
+ const form=document.getElementById('interviewForm');if(!form)return;
+ form.querySelectorAll('input,select,textarea').forEach(el=>el.disabled=false);
+ const saveBtn=document.getElementById('saveInterviewBtn');if(saveBtn)saveBtn.style.display='';
+ const editBtn=document.getElementById('editInterviewBtn');if(editBtn)editBtn.style.display='none';
+}
+
+function openStopProcessModal(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ if(!confirm('Are you sure you want to stop the recruitment process for this candidate?'))return;
+ modalTitle.textContent='Stop Candidate Process';
+ modalBody.innerHTML=`
+  <div class="process-stopped-banner">Candidate: ${esc(c.fullName)}<br>This will stop the candidate from moving to the next recruitment stages.</div>
+  <label>Stop Reason <span style="color:var(--red)">*</span>
+   <select id="stopProcessReason" onchange="toggleOtherStopReason()">
+    <option value="">Select Reason</option>
+    <option>Not Suitable</option><option>Candidate Not Interested</option><option>Salary Issue</option><option>Document Issue</option><option>Failed Technical Interview</option><option>Other</option>
+   </select>
+  </label>
+  <label id="otherStopReasonWrap" class="hidden">Other Reason<textarea id="otherStopReason" placeholder="Enter mandatory reason..."></textarea></label>
+  <div class="actions"><button class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn danger" onclick="confirmStopCandidate('${c.id}')">Confirm Stop Process</button></div>`;
+ modalBg.classList.remove('hidden');
+}
+function toggleOtherStopReason(){
+ const v=document.getElementById('stopProcessReason')?.value;
+ document.getElementById('otherStopReasonWrap')?.classList.toggle('hidden',v!=='Other');
+}
+function confirmStopCandidate(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ const choice=document.getElementById('stopProcessReason')?.value||'';
+ const other=(document.getElementById('otherStopReason')?.value||'').trim();
+ const reason=choice==='Other'?other:choice;
+ if(!choice||!reason){alert('Stop Reason is mandatory. Please select or enter a reason.');return}
+ const previousResult=c.interview?.result||'Not Saved';
+ c.processStopped=true;c.stopReason=reason;c.stoppedAt=new Date().toISOString();c.stoppedBy=currentUser.name;
+ c.interviewHistory=c.interviewHistory||[];
+ c.interviewHistory.push({date:c.stoppedAt,previousResult,newResult:'PROCESS STOPPED',changedBy:currentUser.name,stopReason:reason});
+ c.history=c.history||[];c.history.push({date:c.stoppedAt,text:'PROCESS STOPPED by '+currentUser.name+'. Reason: '+reason});
+ persist();closeModal();renderDashboard();showInterviewWorkspace();alert('Candidate process stopped successfully.');
+}
+function resumeCandidateProcess(id){
+ if(!['superuser','interviewer'].includes(userRole())){alert('Only Super User or Interviewer can resume a stopped candidate.');return}
+ const c=candidates.find(x=>x.id===id);if(!c||!c.processStopped)return;
+ if(!confirm('Resume recruitment process for this candidate?'))return;
+ const previousResult='PROCESS STOPPED';
+ const resumedResult=c.interview?.result||'Interview Pending';
+ c.processStopped=false;c.resumedAt=new Date().toISOString();c.resumedBy=currentUser.name;
+ c.interviewHistory=c.interviewHistory||[];
+ c.interviewHistory.push({date:c.resumedAt,previousResult,newResult:resumedResult,changedBy:currentUser.name,stopReason:c.stopReason||''});
+ c.history=c.history||[];c.history.push({date:c.resumedAt,text:'Recruitment process resumed by '+currentUser.name});
+ persist();renderDashboard();showInterviewWorkspace();alert('Candidate process resumed.');
 }
 function showAgencyResults(){
- const list=visibleCandidates().filter(c=>c.interview&&['Selected','Rejected','Hold'].includes(c.interview.result));
+ const list=visibleCandidates().filter(c=>c.interview&&['Selected','Rejected','Hold','Second Interview','Negotiation','Absent'].includes(c.interview.result));
  mainPanel.innerHTML=`<div class="panel-head"><h2>Interview Results</h2></div>${candidateTable(list)}`
 }
 function showAgencySelected(){
@@ -1485,7 +1554,7 @@ function userCampaignOptions(selected=[],all=true){
        style="width:auto;margin:2px 0 0">
       <span><b>${esc(c.id)}</b><br><small style="color:var(--muted)">${esc(c.name||'Campaign')}</small></span>
     </label>`).join('')
-  : '<div class="note">No campaign has been created yet. First create a campaign from Campaign Management.</div>';
+  : '<div class="note">No campaign has been created yet. First create a campaign from .</div>';
 
  return `<label style="grid-column:1/-1">Campaign Access
    <select id="userCampaignMode" name="campaignMode" onchange="toggleCampaignAccessFields()">
@@ -1774,10 +1843,7 @@ function createAgencyUser(){openUserForm()}
 function editAgencyUser(id){openUserForm(id)}
 function deleteAgency(id){deleteUserAccount(id)}
 
-function showCampaigns(){
- if(userRole()!=='superuser')return;
- mainPanel.innerHTML=`<div class="panel-head"><h2>Campaign Management</h2><button class="btn primary" onclick="createCampaign()">Create Campaign</button></div><div class="table-wrap"><table><thead><tr><th>No.</th><th>Name</th><th>Agency</th><th>Interviewer</th><th>Status</th><th>Action</th></tr></thead><tbody>${campaigns.map(c=>`<tr><td><b>${c.id}</b></td><td>${esc(c.name)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.interviewerName)}</td><td>${c.status}</td><td><button class="btn secondary" onclick="toggleCampaign('${c.id}')">${c.status==='Open'?'Close':'Open'}</button> <button class="btn danger" onclick="deleteCampaign('${c.id}')">Deactivate</button></td></tr>`).join('')||'<tr><td colspan="6">No campaigns.</td></tr>'}</tbody></table></div>`
-}
+function showCampaigns(){showHome();}
 function nextCampaign(){const y=new Date().getFullYear(),n=Math.max(0,...campaigns.filter(c=>c.id.startsWith('CMP-'+y)).map(c=>Number(c.id.split('-').pop())||0))+1;return `CMP-${y}-${String(n).padStart(3,'0')}`}
 function createCampaign(){
  const ints=users.filter(u=>u.role==='interviewer'&&u.active);
