@@ -293,9 +293,22 @@ async function loadPortalState(){
  localStorage.setItem(KEYS.campaigns,JSON.stringify(campaigns));
  localStorage.setItem(KEYS.candidates,JSON.stringify(candidates));
 }
-async function savePortalState(){
+let stateSaveChain=Promise.resolve();
+function savePortalState(){
+ // Serialize saves instead of skipping them: every call is guaranteed to actually
+ // run (with whatever is in `campaigns`/`candidates` at the time its turn comes up)
+ // and the returned promise only resolves once THIS save has truly completed.
+ // Previously, a call arriving while another save was in flight would just set a
+ // "queued" flag and resolve immediately with `true` — so callers like
+ // deleteEmployee/editCandidate would show "Saved successfully" and navigate away
+ // before the write had actually reached Supabase, losing the change if the page
+ // was closed or refreshed in that window.
+ const run=stateSaveChain.then(()=>runPortalStateSave());
+ stateSaveChain=run.then(()=>{},()=>{});
+ return run;
+}
+async function runPortalStateSave(){
  if(!supabaseClient||!currentUser||!stateLoaded)return true;
- if(stateSaveInFlight){stateSaveQueued=true;return true;}
  stateSaveInFlight=true;
  clearTimeout(stateSaveTimer);
  const versionAtStart=stateLocalVersion;
@@ -360,8 +373,10 @@ async function savePortalState(){
   throw error;
  }finally{
   stateSaveInFlight=false;
-  if(stateSaveQueued||stateLocalVersion>stateSavedVersion){
-   stateSaveQueued=false;
+  if(stateLocalVersion>stateSavedVersion){
+   // More local edits arrived while this save was running (or were made without
+   // going through persist(), e.g. deleteEmployee/editCandidate) — run one more
+   // pass so they aren't left unsaved.
    clearTimeout(stateSaveTimer);
    stateSaveTimer=setTimeout(()=>savePortalState().catch(err=>console.error(err)),80);
   }else if(stateRemoteRefreshQueued){
