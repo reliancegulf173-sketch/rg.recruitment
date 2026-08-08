@@ -1042,41 +1042,72 @@ function editCandidate(id){
 }
 
 let interviewDesignationFilter='ALL';
+let interviewAgencyFilter='ALL';
+
+function interviewFilterOptions(list,key,label){
+ const values=[...new Set(list.map(c=>String(c[key]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+ return `<option value="ALL">All ${label}</option>`+values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+}
+
+function filteredInterviewCandidates(){
+ return visibleCandidates().filter(c=>{
+  const designation=String(c.designation||'Not Specified').trim()||'Not Specified';
+  const agency=String(c.agencyName||'').trim();
+  const matchesDesignation=interviewDesignationFilter==='ALL'||designation===interviewDesignationFilter;
+  const matchesAgency=interviewAgencyFilter==='ALL'||agency===interviewAgencyFilter;
+  return matchesDesignation&&matchesAgency;
+ });
+}
+
+function renderInterviewDesignationSummary(){
+ const summaryEl=document.getElementById('interviewDesignationSummary');
+ const totalEl=document.getElementById('interviewSummaryTotal');
+ if(!summaryEl)return;
+
+ const agencyFiltered=visibleCandidates().filter(c=>interviewAgencyFilter==='ALL'||String(c.agencyName||'').trim()===interviewAgencyFilter);
+ const designationCounts=agencyFiltered.reduce((acc,c)=>{
+  const designation=String(c.designation||'Not Specified').trim()||'Not Specified';
+  acc[designation]=(acc[designation]||0)+1;
+  return acc;
+ },{});
+ const designationCards=Object.entries(designationCounts)
+  .sort((a,b)=>a[0].localeCompare(b[0]))
+  .map(([designation,count])=>`
+   <button type="button" class="interview-designation-card ${interviewDesignationFilter===designation?'active':''}" data-designation="${esc(designation)}" onclick="setInterviewDesignationFilter('${encodeURIComponent(designation)}')">
+    <small>${esc(designation)}</small>
+    <strong>${count}</strong>
+   </button>`).join('');
+
+ summaryEl.innerHTML=`
+  <button type="button" class="interview-designation-card ${interviewDesignationFilter==='ALL'?'active':''}" data-designation="ALL" onclick="setInterviewDesignationFilter('ALL')">
+   <small>All Designations</small>
+   <strong>${agencyFiltered.length}</strong>
+  </button>
+  ${designationCards}`;
+
+ const filteredCount=filteredInterviewCandidates().length;
+ if(totalEl)totalEl.textContent=`${filteredCount} Total Candidates`;
+}
 
 function showInterviewWorkspace(){
  if(userRole()!=='interviewer'){alert('Interviewer only.');return}
 
  const interviewerList=visibleCandidates();
- const designationCounts=interviewerList.reduce((acc,c)=>{
-  const designation=String(c.designation||'Not Specified').trim()||'Not Specified';
-  acc[designation]=(acc[designation]||0)+1;
-  return acc;
- },{});
-
- const designationCards=Object.entries(designationCounts)
-  .sort((a,b)=>a[0].localeCompare(b[0]))
-  .map(([designation,count])=>`
-   <button type="button" class="interview-designation-card" data-designation="${esc(designation)}" onclick="setInterviewDesignationFilter('${encodeURIComponent(designation)}')">
-    <small>${esc(designation)}</small>
-    <strong>${count}</strong>
-   </button>`).join('');
-
  interviewDesignationFilter='ALL';
+ interviewAgencyFilter='ALL';
 
  mainPanel.innerHTML=`
   <div class="interview-workspace-grid">
    <div class="interview-summary-wrap">
     <div class="panel-head">
      <h2>Interview Candidates — Designation-wise Summary</h2>
-     <span class="tag">${interviewerList.length} Total Candidates</span>
+     <span id="interviewSummaryTotal" class="tag">${interviewerList.length} Total Candidates</span>
     </div>
-    <div class="interview-designation-summary">
-     <button type="button" class="interview-designation-card active" data-designation="ALL" onclick="setInterviewDesignationFilter('ALL')">
-      <small>All Designations</small>
-      <strong>${interviewerList.length}</strong>
-     </button>
-     ${designationCards}
+    <div class="multi-filter-bar" style="grid-template-columns:1fr 1fr;margin-bottom:14px">
+     <label>Designation Filter<select id="interviewDashboardDesignationFilter" onchange="changeInterviewDashboardFilters()">${interviewFilterOptions(interviewerList,'designation','Designations')}</select></label>
+     <label>Agency Filter<select id="interviewDashboardAgencyFilter" onchange="changeInterviewDashboardFilters()">${interviewFilterOptions(interviewerList,'agencyName','Agencies')}</select></label>
     </div>
+    <div id="interviewDesignationSummary" class="interview-designation-summary"></div>
    </div>
 
    <div>
@@ -1098,16 +1129,24 @@ function showInterviewWorkspace(){
    </div>
   </div>`;
 
+ renderInterviewDesignationSummary();
+ renderInterviewList();
+}
+
+function changeInterviewDashboardFilters(){
+ const designationEl=document.getElementById('interviewDashboardDesignationFilter');
+ const agencyEl=document.getElementById('interviewDashboardAgencyFilter');
+ interviewDesignationFilter=designationEl?designationEl.value:'ALL';
+ interviewAgencyFilter=agencyEl?agencyEl.value:'ALL';
+ renderInterviewDesignationSummary();
  renderInterviewList();
 }
 
 function setInterviewDesignationFilter(encodedDesignation){
  interviewDesignationFilter=encodedDesignation==='ALL'?'ALL':decodeURIComponent(encodedDesignation);
-
- document.querySelectorAll('.interview-designation-card').forEach(card=>{
-  card.classList.toggle('active',card.dataset.designation===interviewDesignationFilter);
- });
-
+ const designationEl=document.getElementById('interviewDashboardDesignationFilter');
+ if(designationEl)designationEl.value=interviewDesignationFilter;
+ renderInterviewDesignationSummary();
  renderInterviewList();
 }
 
@@ -1118,10 +1157,17 @@ function renderInterviewList(){
 
  const q=String(searchEl.value||'').toLowerCase().trim();
 
- const list=visibleCandidates().filter(c=>{
-  const matchesDesignation=interviewDesignationFilter==='ALL'||String(c.designation||'Not Specified')===interviewDesignationFilter;
-  const searchText=[c.fullName,c.passport,c.designation,c.campaignNo,c.agencyName,c.agentName].map(v=>String(v||'').toLowerCase()).join(' ');
-  return matchesDesignation&&searchText.includes(q);
+ const resultEl=document.getElementById('interviewResultFilter');
+ const clientEl=document.getElementById('interviewClientFilter');
+ const resultFilter=resultEl?resultEl.value:'ALL';
+ const clientFilter=String(clientEl?.value||'').toLowerCase().trim();
+
+ const list=filteredInterviewCandidates().filter(c=>{
+  const searchText=[c.fullName,c.passport,c.designation,c.campaignNo,c.agencyName,c.agentName,c.interview?.recommendedClient].map(v=>String(v||'').toLowerCase()).join(' ');
+  const currentResult=c.interview?.result||'Not Interviewed';
+  const matchesResult=resultFilter==='ALL'||currentResult===resultFilter;
+  const matchesClient=!clientFilter||String(c.interview?.recommendedClient||'').toLowerCase().includes(clientFilter);
+  return searchText.includes(q)&&matchesResult&&matchesClient;
  });
 
  const countEl=document.getElementById('interviewAvailableCount');
