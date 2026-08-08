@@ -877,7 +877,9 @@ async function deleteEmployee(id){
 
 function editCandidate(id){
  const c=candidates.find(x=>x.id===id);if(!c)return;
- if(userRole()==='agency'&&c.interview){alert('Agency can edit only before interview.');return}
+ const role=userRole();
+ if(!['superuser','interviewer','admin','agency'].includes(role)){alert('You do not have permission to edit employee details.');return}
+ if(role==='agency'&&c.interview){alert('Agency can edit only before interview.');return}
 
  const editCampaigns=campaigns.slice();
  if(c.campaignNo&&!editCampaigns.some(x=>x.id===c.campaignNo)){
@@ -1085,6 +1087,7 @@ function selectForInterview(id){
  <div class="interview-candidate-layout">
   <aside class="candidate-bio-card">
    <h3>👤 Candidate Bio Data</h3>
+   ${['superuser','interviewer'].includes(userRole())?`<button type="button" class="btn secondary" style="width:100%;margin:0 0 10px" onclick="editCandidate('${c.id}')">✏️ Edit / Overwrite Employee Details</button>`:''}
    ${c.processStopped?`<div class="process-stopped-banner">⛔ PROCESS STOPPED<br><small>Reason: ${esc(c.stopReason||'-')}<br>Stopped by: ${esc(c.stoppedBy||'-')} · ${esc(c.stoppedAt||'-')}</small></div>`:''}
 
    <div class="candidate-bio-section">
