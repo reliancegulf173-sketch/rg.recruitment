@@ -29,7 +29,7 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 .content{padding:24px 28px}
 .dashboard-filter{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:16px}
 .dashboard-filter label{margin:0;font-size:13px}
-.dashboard-filter select{width:280px;margin:0}.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}.card,.panel{background:#fff;border:1px solid var(--line);border-radius:12px}
+.dashboard-filter select{width:280px;margin:0}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}.card,.panel{background:#fff;border:1px solid var(--line);border-radius:12px}
 .card{padding:16px;display:flex;gap:14px;align-items:center;cursor:pointer;transition:.2s}.card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(20,55,95,.12);border-color:#9db9e5}.card-icon{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:27px}.cblue{background:#e9f1ff}.cgreen{background:#eaf8ef}.corange{background:#fff0df}.cpurple{background:#efeaff}.cred{background:#ffe7e7}
 .designation-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 18px}
 .designation-summary-card{background:#f8faff;border:1px solid var(--line);border-radius:10px;padding:13px}
@@ -98,6 +98,11 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
 .interview-remarks-cell{min-width:220px;max-width:340px;white-space:normal!important;line-height:1.4}
 .interview-remarks-preview{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
 .interview-remarks-empty{color:var(--muted)}
+.process-stopped-banner{padding:13px;border-radius:9px;background:#ffe5e5;border:1px solid #e35b5b;color:#9d1f1f;font-weight:700;margin:12px 0}
+.process-stopped-item{background:#fff0f0!important;border-left:4px solid var(--red)}
+.interview-saved-item{background:#f3f8ff}
+.interview-history-table td,.interview-history-table th{white-space:normal!important;vertical-align:top}
+.multi-filter-bar{display:grid;grid-template-columns:2fr repeat(5,minmax(130px,1fr));gap:10px;align-items:end;margin:12px 0 16px;padding:12px;background:#f8faff;border:1px solid var(--line);border-radius:10px}.multi-filter-bar label{margin:0}.multi-filter-bar input,.multi-filter-bar select{margin-top:5px}.multi-filter-count{grid-column:1/-1;color:var(--muted);font-size:12px;font-weight:700}@media(max-width:1100px){.multi-filter-bar{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.multi-filter-bar{grid-template-columns:1fr}}
 @media print{
  .sidebar,.topbar,.dashboard-filter,.cards,.ops,.grid2,.export-toolbar,.modal-bg{display:none!important}
  .app{display:block!important}.main{display:block!important}.content{padding:0!important}
@@ -150,7 +155,8 @@ textarea{min-height:100px}.password-wrap{position:relative}.password-wrap input{
     <div class="card" onclick="openTopDashboardList('interview')"><div class="card-icon cgreen">🗓</div><div><small>Available for Interview</small><strong id="topInterview">0</strong></div></div>
     <div class="card" onclick="openTopDashboardList('selected')"><div class="card-icon corange">🏆</div><div><small>Selected</small><strong id="topSelected">0</strong></div></div>
     <div class="card" onclick="openTopDashboardList('rejected')"><div class="card-icon cred">❌</div><div><small>Rejected</small><strong id="topRejected">0</strong></div></div>
-    <div class="card" onclick="openTopDashboardList('reached')"><div class="card-icon cpurple">✈️</div><div><small>Reached UAE</small><strong id="topReached">0</strong></div></div>
+    <div class="card" onclick="openTopDashboardList('shortlisted')"><div class="card-icon cpurple">📋</div><div><small>Shortlisted for Client</small><strong id="topShortlisted">0</strong></div></div>
+    <div class="card" onclick="openTopDashboardList('reached')"><div class="card-icon cgreen">✈️</div><div><small>Reached UAE</small><strong id="topReached">0</strong></div></div>
   </section>
 
   <section id="opsDashboard" class="ops hidden">
@@ -424,8 +430,8 @@ function changeDashboardCampaign(value){
  renderDashboard();
  showHome();
 }
-function selected(c){return c.interview?.result==='Selected'}
-function available(c){return !c.interview || !['Selected','Rejected','Hold','Absent'].includes(c.interview.result)}
+function selected(c){return !c.processStopped&&c.interview?.result==='Selected'}
+function available(c){return !c.processStopped&&(!c.interview || !['Selected','Rejected','Shortlisted for Client','Absent'].includes(c.interview.result))}
 function bool(v){return v===true}
 function within3(date){if(!date)return false;const d=new Date(date+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);const e=new Date(t);e.setDate(e.getDate()+3);return d>=t&&d<=e}
 
@@ -446,7 +452,7 @@ function adminCounts(){
 function renderDashboard(){
  refreshDashboardCampaignFilter();
  const list=visibleCandidates(),ac=adminCounts();
- topTotal.textContent=list.length;topInterview.textContent=list.filter(available).length;topSelected.textContent=list.filter(selected).length;topRejected.textContent=list.filter(c=>c.interview?.result==='Rejected').length;topReached.textContent=list.filter(c=>bool(c.admin?.reachedUAE)).length;
+ topTotal.textContent=list.length;topInterview.textContent=list.filter(available).length;topSelected.textContent=list.filter(selected).length;topRejected.textContent=list.filter(c=>c.interview?.result==='Rejected').length;topShortlisted.textContent=list.filter(c=>!c.processStopped&&c.interview?.result==='Shortlisted for Client').length;topReached.textContent=list.filter(c=>bool(c.admin?.reachedUAE)).length;
  pAdded.textContent=list.filter(c=>!c.interview).length;pInterview.textContent=list.filter(available).length;pSelected.textContent=list.filter(selected).length;pReached.textContent=list.filter(c=>bool(c.admin?.reachedUAE)).length;
  const opsAllowed=['admin','superuser','interviewer'].includes(userRole());opsDashboard.classList.toggle('hidden',!opsAllowed);
  if(opsAllowed){opsSelected.textContent=ac.selected.length;opsOfferSend.textContent=ac.offerSend.length;opsOfferReceive.textContent=ac.offerReceive.length;opsVisa.textContent=ac.visa.length;opsTicket.textContent=ac.ticket.length;opsTravel3.textContent=ac.travel3.length;opsUaeVisa.textContent=ac.uaeVisa.length}
@@ -507,6 +513,7 @@ function topDashboardFilteredList(type){
  if(type==='interview')return list.filter(available);
  if(type==='selected')return list.filter(selected);
  if(type==='rejected')return list.filter(c=>c.interview?.result==='Rejected');
+ if(type==='shortlisted')return list.filter(c=>!c.processStopped&&c.interview?.result==='Shortlisted for Client');
  if(type==='reached')return list.filter(c=>!!c.admin?.reachedUAE);
  return list;
 }
@@ -516,6 +523,7 @@ function topDashboardTitle(type){
   interview:'Available for Interview',
   selected:'Selected Employees',
   rejected:'Rejected Candidates',
+  shortlisted:'Shortlisted for Client',
   reached:'Employees Reached UAE'
  }[type]||'Candidates';
 }
@@ -530,6 +538,35 @@ function designationSummaryData(list){
    map[designation]=(map[designation]||0)+1;
  });
  return Object.entries(map).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+}
+function uniqueCandidateValues(list,fn){return [...new Set(list.map(fn).map(v=>String(v||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
+function candidateMultiFilterHTML(list,id){
+ const designations=uniqueCandidateValues(list,c=>c.interview?.recommendedDesignation||c.designation);
+ const results=uniqueCandidateValues(list,c=>c.interview?.result||stage(c));
+ const clients=uniqueCandidateValues(list,c=>c.interview?.recommendedClient);
+ const agents=uniqueCandidateValues(list,c=>c.agentName||c.agencyName);
+ const campaigns=uniqueCandidateValues(list,c=>c.campaignNo);
+ const opts=a=>a.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+ return `<div class="multi-filter-bar" id="${id}Filters">
+  <label>Search<input data-filter="search" placeholder="Name, ID, passport..." oninput="applyCandidateMultiFilters('${id}')"></label>
+  <label>Designation<select data-filter="designation" onchange="applyCandidateMultiFilters('${id}')"><option value="">All</option>${opts(designations)}</select></label>
+  <label>Interview Result<select data-filter="result" onchange="applyCandidateMultiFilters('${id}')"><option value="">All</option>${opts(results)}</select></label>
+  <label>Recommended Client<select data-filter="client" onchange="applyCandidateMultiFilters('${id}')"><option value="">All</option>${opts(clients)}</select></label>
+  <label>Agent / Agency<select data-filter="agent" onchange="applyCandidateMultiFilters('${id}')"><option value="">All</option>${opts(agents)}</select></label>
+  <label>Campaign<select data-filter="campaign" onchange="applyCandidateMultiFilters('${id}')"><option value="">All</option>${opts(campaigns)}</select></label>
+  <div class="multi-filter-count" data-filter-count>${list.length} record${list.length===1?'':'s'} shown</div>
+ </div>`;
+}
+function candidateFilterAttrs(c){
+ const search=[c.id,c.fullName,c.passport,c.interview?.recommendedDesignation,c.designation,c.interview?.recommendedClient,c.agentName,c.agencyName,c.campaignNo,c.interview?.remarks,c.clientRemarks].filter(Boolean).join(' ').toLowerCase();
+ return `data-filter-row="1" data-search="${esc(search)}" data-designation="${esc(c.interview?.recommendedDesignation||c.designation||'')}" data-result="${esc(c.interview?.result||stage(c))}" data-client="${esc(c.interview?.recommendedClient||'')}" data-agent="${esc(c.agentName||c.agencyName||'')}" data-campaign="${esc(c.campaignNo||'')}"`;
+}
+function applyCandidateMultiFilters(id){
+ const box=document.getElementById(id+'Filters');const table=document.getElementById(id+'Table');if(!box||!table)return;
+ const val=k=>String(box.querySelector(`[data-filter="${k}"]`)?.value||'').trim().toLowerCase();
+ const q=val('search'),d=val('designation'),r=val('result'),cl=val('client'),a=val('agent'),cp=val('campaign');let shown=0;
+ table.querySelectorAll('tbody tr[data-filter-row="1"]').forEach(row=>{const ok=(!q||row.dataset.search.includes(q))&&(!d||row.dataset.designation.toLowerCase()===d)&&(!r||row.dataset.result.toLowerCase()===r)&&(!cl||row.dataset.client.toLowerCase()===cl)&&(!a||row.dataset.agent.toLowerCase()===a)&&(!cp||row.dataset.campaign.toLowerCase()===cp);row.style.display=ok?'':'none';if(ok)shown++});
+ const cnt=box.querySelector('[data-filter-count]');if(cnt)cnt.textContent=shown+' record'+(shown===1?'':'s')+' shown';
 }
 function designationSummaryHTML(list){
  const data=designationSummaryData(list);
@@ -557,14 +594,66 @@ function openTopDashboardList(type){
    showInterviewWorkspace();
    return;
  }
+ if(type==='shortlisted'){
+   showShortlistedForClientList(list,title);
+   return;
+ }
 
  mainPanel.innerHTML=`<div class="panel-head"><h2>${title}</h2><span class="tag">${list.length} Record${list.length===1?'':'s'}</span></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateTable(list)}`;
  setTimeout(()=>mainPanel.scrollIntoView({behavior:'smooth',block:'start'}),20);
 }
+
+function showShortlistedForClientList(list,title){
+ const canEditClientRemarks=['interviewer','superuser','admin'].includes(userRole());
+ const tableId='shortlistedClient';
+ mainPanel.innerHTML=`<div class="panel-head"><h2>${esc(title)}</h2><span class="tag">${list.length} Record${list.length===1?'':'s'}</span></div>
+ <h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateMultiFilterHTML(list,tableId)}
+ <div class="table-wrap"><table id="${tableId}Table">
+  <thead><tr><th>ID</th><th>Name</th><th>Passport</th><th>Campaign</th><th>Agent Name</th><th>Designation</th><th>Recommended Client</th><th>Interview Remarks</th><th>Client Remarks</th><th>Action</th></tr></thead>
+  <tbody>${list.map(c=>{
+   const interviewRemarks=String(c.interview?.remarks||'').trim();
+   const clientRemarks=String(c.clientRemarks||'').trim();
+   return `<tr ${candidateFilterAttrs(c)}>
+    <td><b>${esc(c.id)}</b></td><td>${esc(c.fullName)}</td><td>${esc(c.passport||'-')}</td><td>${esc(c.campaignNo||'-')}</td><td>${esc(c.agentName||c.agencyName||'-')}</td>
+    <td>${esc(c.interview?.recommendedDesignation||c.designation||'-')}</td>
+    <td>${esc(c.interview?.recommendedClient||'-')}</td>
+    <td class="interview-remarks-cell" title="${esc(interviewRemarks||'No interview remarks')}">${interviewRemarks?`<div class="interview-remarks-preview">${esc(interviewRemarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td>
+    <td class="interview-remarks-cell" title="${esc(clientRemarks||'No client remarks')}">${clientRemarks?`<div class="interview-remarks-preview">${esc(clientRemarks)}</div>`:'<span class="interview-remarks-empty">No client remarks</span>'}</td>
+    <td>${canEditClientRemarks?`<button class="btn secondary" onclick="editClientRemarks('${c.id}')">Edit</button>`:`<button class="eye" onclick="openCandidate('${c.id}')">⊙</button>`}</td>
+   </tr>`;
+  }).join('')||'<tr><td colspan="10" style="text-align:center;color:var(--muted)">No shortlisted candidates found.</td></tr>'}</tbody>
+ </table></div>`;
+ setTimeout(()=>mainPanel.scrollIntoView({behavior:'smooth',block:'start'}),20);
+}
+
+function editClientRemarks(id){
+ if(!['interviewer','superuser','admin'].includes(userRole())){alert('You do not have permission to edit Client Remarks.');return}
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ if(c.interview?.result!=='Shortlisted for Client'){alert('Client Remarks can be edited only for candidates Shortlisted for Client.');return}
+ modalTitle.textContent='Client Remarks - '+c.fullName;
+ modalBody.innerHTML=`
+  <div class="details"><div><small>Candidate ID</small><b>${esc(c.id)}</b></div><div><small>Recommended Designation</small><b>${esc(c.interview?.recommendedDesignation||c.designation||'-')}</b></div><div><small>Recommended Client</small><b>${esc(c.interview?.recommendedClient||'-')}</b></div></div>
+  <label>Remarks for Client<textarea id="clientRemarksInput" placeholder="Enter remarks to share with client...">${esc(c.clientRemarks||'')}</textarea></label>
+  <div class="actions"><button class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="saveClientRemarks('${c.id}')">Save Remarks</button></div>`;
+ modalBg.classList.remove('hidden');
+}
+
+function saveClientRemarks(id){
+ if(!['interviewer','superuser','admin'].includes(userRole())){alert('You do not have permission to edit Client Remarks.');return}
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ const input=document.getElementById('clientRemarksInput');if(!input)return;
+ const previous=String(c.clientRemarks||'').trim();
+ const value=String(input.value||'').trim();
+ c.clientRemarks=value;
+ c.history=c.history||[];
+ c.history.push({date:new Date().toISOString(),text:(previous?'Client remarks updated':'Client remarks added')+' by '+currentUser.name+(value?': '+value:'')});
+ persist();closeModal();renderDashboard();openTopDashboardList('shortlisted');alert('Client Remarks saved successfully.');
+}
 function showHome(){const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;mainPanel.innerHTML=`<div class="panel-head"><h2>Recent Candidates - ${label}</h2><button class="btn secondary" onclick="showAllCandidates()">View All</button></div>${candidateTable(visibleCandidates().slice(0,8))}`}
 function showAllCandidates(){const label=dashboardCampaign==='ALL'?'All Campaigns':dashboardCampaign;mainPanel.innerHTML=`<div class="panel-head"><h2>All Candidates - ${label}</h2></div>${candidateTable(visibleCandidates())}`}
 function candidateTable(list){
- return `<div class="table-wrap"><table>
+ const tableId='candidateTable_'+Math.random().toString(36).slice(2,8);
+ return `${candidateMultiFilterHTML(list,tableId)}<div class="table-wrap"><table id="${tableId}Table">
   <thead><tr>
    <th>ID</th>
    <th>Date of Entry</th>
@@ -573,13 +662,14 @@ function candidateTable(list){
    <th>Campaign</th>
    <th>Agent Name</th>
    <th>Designation</th>
+   <th>Recommended Client</th>
    <th>Interview Remarks</th>
    <th>Stage</th>
    <th>Action</th>
   </tr></thead>
   <tbody>${list.map(c=>{
    const remarks=String(c.interview?.remarks||'').trim();
-   return `<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}">
+   return `<tr ${candidateFilterAttrs(c)} class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}">
     <td><b>${esc(c.id)}</b></td>
     <td>${esc(candidateEntryDate(c))}</td>
     <td>${esc(c.fullName)}</td>
@@ -593,17 +683,19 @@ function candidateTable(list){
     <td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(stage(c))}</span></td>
     <td><button class="eye" onclick="openCandidate('${c.id}')">⊙</button></td>
    </tr>`;
-  }).join('')||'<tr><td colspan="10" style="text-align:center;color:var(--muted)">No candidates found.</td></tr>'}
+  }).join('')||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">No candidates found.</td></tr>'}
   </tbody>
  </table></div>`;
 }
 function stage(c){
+ if(c.processStopped)return 'PROCESS STOPPED';
  if(c.admin?.visaResult==='Rejected')return 'Visa Rejected';
  if(c.admin?.visaResult==='Received')return c.admin?.ticketBooked?'Ticket Booked':'Visa Received';
  if(c.offerResponse?.status==='Accepted')return 'Offer Accepted';
  if(c.offerResponse?.status==='Rejected')return 'Offer Rejected';
  if(c.offerResponse?.status==='Negotiation Required')return 'Offer Negotiation';
  if(c.interview?.result==='Selected')return c.admin?.reachedUAE?'Reached UAE':'Selected';
+ if(c.interview?.result==='Shortlisted for Client')return 'Shortlisted for Client';
  if(c.interview?.result)return c.interview.result;
  if(c.interview)return 'Interview Pending';
  return 'Employee Added'
@@ -614,7 +706,7 @@ function calcAge(d){if(!d)return'';const dob=new Date(d+'T00:00:00'),t=new Date(
 function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function candidateEntryDate(c){const raw=c?.dateOfEntry||(c?.history?.[0]?.date||'').slice(0,10);if(!raw)return'-';const parts=String(raw).slice(0,10).split('-');return parts.length===3?parts[2]+'/'+parts[1]+'/'+parts[0]:raw}
 function agencyCampaigns(){return availableCampaignsForDashboard().filter(c=>c.status==='Open')}
-const crafts=['Pipe Fabricator','Pipe Fitter','Structural Fabricator','Structural Fitter','Welder - GTAW/SMAW','Welder - SMAW','Welder - FCAW','Mechanical Technician','Mechanical Foreman','Mechanical Supervisor','Piping Supervisor','Rigger','Rigging Supervisor','Scaffolder','Scaffolding Supervisor','Millwright Fitter','Equipment Fitter','Valve Technician','Machinist','Grinder','Helper'];
+const crafts=['Pipe Fabricator','Pipe Fitter','Structural Fabricator','Structural Fitter','Welder - GTAW/SMAW','Welder - SMAW','Welder - FCAW','Mechanical Technician','Mechanical Foreman','Mechanical Supervisor','Piping Supervisor','Rigger','Rigging Supervisor','Scaffolder','Scaffolding Supervisor','Millwright Fitter','Equipment Fitter','Valve Technician','Machinist','Grinder','Helper','Pipeline Engineer','Senior Pipeline Engineer','Electrical Engineer','Senior E&I','Instrument Engineer','Quantity Surveyor','Senior Civil Engineer','Site Surveyor','Civil Engineer','As Built Coordinator','Mechanical Engineer "Rotating"','Mechanical Engineer "Static"','Piping Engineer','Senior Mechanical Engineer','Senior Piping Engineer','Ohl Engineer','Senior Electrical Engineer','Senior Ohl','Senior Instrument Engineer','Telecom Engineer','Fire & Gas Engineer','Hvac Engineer','Senior Mechanical Engineer Rotating','Senior Mechanical Engineer Static','Mechanical Engineer "Tanks"'];
 
 function openAddCandidate(){
  const role=userRole();
@@ -785,7 +877,9 @@ async function deleteEmployee(id){
 
 function editCandidate(id){
  const c=candidates.find(x=>x.id===id);if(!c)return;
- if(userRole()==='agency'&&c.interview){alert('Agency can edit only before interview.');return}
+ const role=userRole();
+ if(!['superuser','interviewer','admin','agency'].includes(role)){alert('You do not have permission to edit employee details.');return}
+ if(role==='agency'&&c.interview){alert('Agency can edit only before interview.');return}
 
  const editCampaigns=campaigns.slice();
  if(c.campaignNo&&!editCampaigns.some(x=>x.id===c.campaignNo)){
@@ -818,7 +912,7 @@ function editCandidate(id){
   <label>Previous Gulf Experience<input name="gulfExp" type="number" min="0" step="0.1" value="${Number(c.gulfExp||0)}"></label>
   <label>Current Salary - AED<input name="currentSalary" type="number" min="0" value="${Number(c.currentSalary||0)}"></label>
   <label>Expected Salary - AED<input name="expectedSalary" type="number" min="0" value="${Number(c.expectedSalary||0)}"></label>
-  <label>Recruitment Agency<input value="${esc(c.agencyName||'')}" readonly></label>
+  <label>Recruitment Agency *<input name="recruitmentAgency" value="${esc(c.agencyName||'')}" required placeholder="Enter Recruitment Agency Name"></label>
   <label>Home State<input name="state" value="${esc(c.state||'')}"></label>
   <label>Home City<input name="city" value="${esc(c.city||'')}"></label>
  </div><div class="actions"><button type="button" class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn primary">Save Changes</button></div></form>`;
@@ -861,12 +955,17 @@ function editCandidate(id){
   c.gulfExp=Number(f.get('gulfExp')||0);
   c.currentSalary=Number(f.get('currentSalary')||0);
   c.expectedSalary=Number(f.get('expectedSalary')||0);
+  const newAgencyName=String(f.get('recruitmentAgency')||'').trim();
+  if(!newAgencyName){alert('Please enter Recruitment Agency Name.');return}
+  const oldAgencyName=c.agencyName||'';
+  c.agencyName=newAgencyName;
+  // Keep agentName unchanged; Recruitment Agency is stored separately.
   c.campaignNo=camp.id;
   c.campaignName=camp.name;
   c.state=f.get('state');
   c.city=f.get('city');
   c.history=c.history||[];
-  c.history.push({date:new Date().toISOString(),text:'Complete profile updated by '+currentUser.name});
+  c.history.push({date:new Date().toISOString(),text:'Complete profile updated by '+currentUser.name+(oldAgencyName!==newAgencyName?' | Recruitment Agency changed from '+(oldAgencyName||'-')+' to '+newAgencyName:'')});
 
   persist();
   closeModal();
@@ -881,7 +980,7 @@ let interviewDesignationFilter='ALL';
 function showInterviewWorkspace(){
  if(userRole()!=='interviewer'){alert('Interviewer only.');return}
 
- const interviewerList=visibleCandidates().filter(available);
+ const interviewerList=visibleCandidates();
  const designationCounts=interviewerList.reduce((acc,c)=>{
   const designation=String(c.designation||'Not Specified').trim()||'Not Specified';
   acc[designation]=(acc[designation]||0)+1;
@@ -902,8 +1001,8 @@ function showInterviewWorkspace(){
   <div class="interview-workspace-grid">
    <div class="interview-summary-wrap">
     <div class="panel-head">
-     <h2>Available for Interview — Designation-wise Summary</h2>
-     <span class="tag">${interviewerList.length} Total Available</span>
+     <h2>Interview Candidates — Designation-wise Summary</h2>
+     <span class="tag">${interviewerList.length} Total Candidates</span>
     </div>
     <div class="interview-designation-summary">
      <button type="button" class="interview-designation-card active" data-designation="ALL" onclick="setInterviewDesignationFilter('ALL')">
@@ -916,10 +1015,14 @@ function showInterviewWorkspace(){
 
    <div>
     <div class="panel-head">
-     <h2>Manpower Available for Interview</h2>
-     <span id="interviewAvailableCount" class="tag">${interviewerList.length} Available</span>
+     <h2>Manpower Interview List</h2>
+     <span id="interviewAvailableCount" class="tag">${interviewerList.length} Candidates</span>
     </div>
-    <input id="interviewSearch" placeholder="Search by name, passport or designation..." oninput="renderInterviewList()">
+    <div class="multi-filter-bar" style="grid-template-columns:2fr 1fr 1fr">
+     <label>Search<input id="interviewSearch" placeholder="Search name, passport, designation, client..." oninput="renderInterviewList()"></label>
+     <label>Result<select id="interviewResultFilter" onchange="renderInterviewList()"><option value="ALL">All Results</option><option>Selected</option><option>Rejected</option><option>Shortlisted for Client</option><option>Not Interviewed</option></select></label>
+     <label>Recommended Client<input id="interviewClientFilter" placeholder="Client name..." oninput="renderInterviewList()"></label>
+    </div>
     <div id="interviewList" class="list-box" style="margin-top:12px"></div>
    </div>
 
@@ -949,24 +1052,26 @@ function renderInterviewList(){
 
  const q=String(searchEl.value||'').toLowerCase().trim();
 
- const list=visibleCandidates().filter(available).filter(c=>{
+ const list=visibleCandidates().filter(c=>{
   const matchesDesignation=interviewDesignationFilter==='ALL'||String(c.designation||'Not Specified')===interviewDesignationFilter;
   const searchText=[c.fullName,c.passport,c.designation,c.campaignNo,c.agencyName,c.agentName].map(v=>String(v||'').toLowerCase()).join(' ');
   return matchesDesignation&&searchText.includes(q);
  });
 
  const countEl=document.getElementById('interviewAvailableCount');
- if(countEl)countEl.textContent=`${list.length} Available`;
+ if(countEl)countEl.textContent=`${list.length} Candidates`;
 
  listEl.innerHTML=list.map(c=>`
-  <div class="list-item" data-candidate-id="${esc(c.id)}" onclick="selectForInterview('${c.id}')">
+  <div class="list-item ${c.processStopped?'process-stopped-item':c.interview?'interview-saved-item':''}" data-candidate-id="${esc(c.id)}" onclick="selectForInterview('${c.id}')">
    <b>${esc(c.fullName)}</b>
-   <small>${esc(c.passport)} · ${esc(c.designation)} · ${esc(c.campaignNo)}</small>
-  </div>`).join('')||'<div style="padding:20px;color:var(--muted)">No manpower available for this designation.</div>';
+   <small>${esc(c.passport)} · ${esc(c.designation)} · ${esc(c.campaignNo)} · <b>${esc(stage(c))}</b></small>
+  </div>`).join('')||'<div style="padding:20px;color:var(--muted)">No manpower found for this designation.</div>';
 }
 function ratingOptions(){return '<option value="">Select</option><option>Excellent</option><option>Good</option><option>Average</option><option>Poor</option>'}
 function selectForInterview(id){
  const c=candidates.find(x=>x.id===id);if(!c)return;
+ c.history=c.history||[];
+ c.interviewHistory=c.interviewHistory||[];
 
  document.querySelectorAll('#interviewList .list-item').forEach(item=>{
   item.classList.toggle('active',item.dataset.candidateId===String(id));
@@ -976,11 +1081,19 @@ function selectForInterview(id){
   if(value===0)return '0';
   return value===undefined||value===null||String(value).trim()===''?'—':esc(value);
  };
+ const iv=c.interview||{};
+ const isSaved=!!c.interview;
+ const locked=isSaved;
+ const sel=(value,current)=>String(value||'')===String(current||'')?' selected':'';
+ const dis=locked?' disabled':'';
+ const historyRows=(c.interviewHistory||[]).slice().reverse().map(h=>`<tr><td>${esc(h.date||'-')}</td><td>${esc(h.previousResult||'-')}</td><td>${esc(h.newResult||'-')}</td><td>${esc(h.changedBy||'-')}</td><td>${esc(h.stopReason||'-')}</td></tr>`).join('');
 
  interviewFormArea.innerHTML=`
  <div class="interview-candidate-layout">
   <aside class="candidate-bio-card">
    <h3>👤 Candidate Bio Data</h3>
+   ${['superuser','interviewer'].includes(userRole())?`<button type="button" class="btn secondary" style="width:100%;margin:0 0 10px" onclick="editCandidate('${c.id}')">✏️ Edit / Overwrite Employee Details</button>`:''}
+   ${c.processStopped?`<div class="process-stopped-banner">⛔ PROCESS STOPPED<br><small>Reason: ${esc(c.stopReason||'-')}<br>Stopped by: ${esc(c.stoppedBy||'-')} · ${esc(c.stoppedAt||'-')}</small></div>`:''}
 
    <div class="candidate-bio-section">
     <h4>Personal Information</h4>
@@ -1016,13 +1129,8 @@ function selectForInterview(id){
     <div class="candidate-bio-row"><span>Campaign</span><b>${showValue(c.campaignNo)}</b></div>
     <div class="candidate-bio-row"><span>Campaign Name</span><b>${showValue(c.campaignName)}</b></div>
     <div class="candidate-bio-row"><span>Date of Entry</span><b>${showValue(candidateEntryDate(c))}</b></div>
+    <div class="candidate-bio-row"><span>Current Status</span><b>${showValue(stage(c))}</b></div>
    </div>
-
-   ${c.interview?.remarks?`
-   <div class="candidate-bio-section">
-    <h4>Previous Interview Note</h4>
-    <div style="font-size:13px;line-height:1.5">${esc(c.interview.remarks)}</div>
-   </div>`:''}
   </aside>
 
   <section class="interview-form-card">
@@ -1031,62 +1139,124 @@ function selectForInterview(id){
      <h2 style="margin-bottom:4px">${esc(c.fullName)}</h2>
      <small style="color:var(--muted)">${esc(c.designation)} · ${esc(c.passport)}</small>
     </div>
-    <span class="tag">${esc(c.campaignNo)}</span>
+    <span class="tag">${esc(stage(c))}</span>
    </div>
 
    <form id="interviewForm">
     <div class="form-grid">
-     <label>Interview Date<input name="date" type="date" value="${new Date().toISOString().slice(0,10)}" required></label>
-     <label>Interview Type<select name="type" required><option value="">Select</option><option>Physical</option><option>Telephonic</option><option>Video Call</option></select></label>
-     <label>Attendance<select name="attendance" required><option value="">Select</option><option>Yes</option><option>No</option></select></label>
+     <label>Interview Date<input name="date" type="date" value="${esc(iv.date||todayISO())}" required${dis}></label>
+     <label>Interview Type<select name="type" required${dis}><option value="">Select</option><option${sel('Physical',iv.type)}>Physical</option><option${sel('Telephonic',iv.type)}>Telephonic</option><option${sel('Video Call',iv.type)}>Video Call</option></select></label>
+     <label>Attendance<select name="attendance" required${dis}><option value="">Select</option><option${sel('Yes',iv.attendance)}>Yes</option><option${sel('No',iv.attendance)}>No</option></select></label>
     </div>
 
     <h3>Evaluation</h3>
-    ${[['Technical Knowledge','technical'],['Practical Skill','practical'],['Safety Knowledge','safety'],['Communication - English','english'],['Communication - Hindi','hindi']].map(x=>`<div class="rating-row"><label>${x[0]}</label><select name="${x[1]}" required>${ratingOptions()}</select></div>`).join('')}
+    ${[['Technical Knowledge','technical'],['Practical Skill','practical'],['Safety Knowledge','safety'],['Communication - English','english'],['Communication - Hindi','hindi']].map(x=>`<div class="rating-row"><label>${x[0]}</label><select name="${x[1]}" required${dis}><option value="">Select</option>${['Excellent','Good','Average','Poor'].map(v=>`<option${sel(v,iv[x[1]])}>${v}</option>`).join('')}</select></div>`).join('')}
 
     <div class="form-grid">
-     <label>Recommended Designation<select name="recommendedDesignation" required><option value="">Select</option>${crafts.map(x=>`<option>${x}</option>`).join('')}</select></label>
-     <label>Recommended Salary - AED<input name="salary" type="number" min="0" required></label>
+     <label>Recommended Designation<select name="recommendedDesignation" id="interviewRecommendedDesignation" required${dis} onchange="interviewCustomDesignation.classList.toggle('hidden',this.value!=='ADD_MORE')"><option value="">Select</option>${crafts.map(x=>`<option${sel(x,iv.recommendedDesignation)}>${x}</option>`).join('')}<option value="ADD_MORE"${iv.recommendedDesignation&&!crafts.includes(iv.recommendedDesignation)?' selected':''}>Other / Add Manually</option></select><input id="interviewCustomDesignation" name="customRecommendedDesignation" class="${iv.recommendedDesignation&&!crafts.includes(iv.recommendedDesignation)?'':'hidden'}" value="${iv.recommendedDesignation&&!crafts.includes(iv.recommendedDesignation)?esc(iv.recommendedDesignation):''}" placeholder="Enter recommended designation manually"${dis}></label>
+     <label>Recommended Client<input name="recommendedClient" value="${esc(iv.recommendedClient||'')}" placeholder="Enter client name"${dis}></label>
+     <label>Recommended Salary - AED<input name="salary" type="number" min="0" value="${Number(iv.salary||0)}" required${dis}></label>
     </div>
 
-    <label>Interview Remarks<textarea name="remarks" required placeholder="Record technical observations, strengths, weaknesses and suitability..."></textarea></label>
-    <label>Interview Result<select name="result" required><option value="">Select</option><option>Selected</option><option>Rejected</option><option>Hold</option></select></label>
-    <div class="actions"><button class="btn primary">Save Interview</button></div>
+    <label>Interview Remarks<textarea name="remarks" required placeholder="Record technical observations, strengths, weaknesses and suitability..."${dis}>${esc(iv.remarks||'')}</textarea></label>
+    <label>Interview Result<select name="result" required${dis}><option value="">Select</option>${['Selected','Rejected','Shortlisted for Client'].map(v=>`<option${sel(v,iv.result)}>${v}</option>`).join('')}</select></label>
+
+    <div class="actions">
+     <button id="saveInterviewBtn" class="btn primary" ${locked?'style="display:none"':''}>${isSaved?'Save Result':'Save Result'}</button>
+     ${isSaved?`<button id="editInterviewBtn" type="button" class="btn secondary" onclick="enableInterviewEdit('${c.id}')">Edit Result</button>`:''}
+     ${c.processStopped?`<button type="button" class="btn primary" onclick="resumeCandidateProcess('${c.id}')">Resume Process</button>`:`<button type="button" class="btn danger" onclick="openStopProcessModal('${c.id}')">Stop Process</button>`}
+    </div>
    </form>
+
+   <div class="candidate-bio-section">
+    <h4>Interview Change History</h4>
+    <div class="table-wrap"><table class="interview-history-table"><thead><tr><th>Date & Time</th><th>Previous Result</th><th>New Result</th><th>Changed By</th><th>Stop Reason</th></tr></thead><tbody>${historyRows||'<tr><td colspan="5">No changes recorded yet.</td></tr>'}</tbody></table></div>
+   </div>
   </section>
  </div>`;
 
  interviewForm.onsubmit=e=>{
   e.preventDefault();
+  if(c.processStopped){alert('This candidate process is stopped. Resume Process before saving a new interview result.');return}
   const f=new FormData(e.target),att=f.get('attendance');
-  c.interview={
-   date:f.get('date'),
-   type:f.get('type'),
-   attendance:att,
-   technical:f.get('technical'),
-   practical:f.get('practical'),
-   safety:f.get('safety'),
-   english:f.get('english'),
-   hindi:f.get('hindi'),
-   recommendedDesignation:f.get('recommendedDesignation'),
-   salary:Number(f.get('salary')||0),
-   remarks:f.get('remarks'),
-   result:att==='No'?'Absent':f.get('result')
+  const previousResult=c.interview?.result||'Not Saved';
+  const newInterview={
+   date:f.get('date'),type:f.get('type'),attendance:att,
+   technical:f.get('technical'),practical:f.get('practical'),safety:f.get('safety'),
+   english:f.get('english'),hindi:f.get('hindi'),
+   recommendedDesignation:f.get('recommendedDesignation')==='ADD_MORE'?(f.get('customRecommendedDesignation')||'').trim():f.get('recommendedDesignation'),recommendedClient:(f.get('recommendedClient')||'').trim(),salary:Number(f.get('salary')||0),
+   remarks:f.get('remarks'),result:att==='No'?'Absent':f.get('result')
   };
-  c.history.push({date:new Date().toISOString(),text:'Interview result '+c.interview.result+' by '+currentUser.name});
-  persist();
-  renderDashboard();
-  showInterviewWorkspace();
-  alert('Interview saved.');
- }
+  if(!newInterview.recommendedDesignation){alert('Please enter the Recommended Designation.');return}
+  c.interview=newInterview;
+  c.interviewHistory=c.interviewHistory||[];
+  c.interviewHistory.push({date:new Date().toISOString(),previousResult,newResult:newInterview.result,changedBy:currentUser.name,stopReason:''});
+  c.history.push({date:new Date().toISOString(),text:(previousResult==='Not Saved'?'Interview result saved: ':'Interview result changed from '+previousResult+' to ')+newInterview.result+' by '+currentUser.name});
+  persist();renderDashboard();showInterviewWorkspace();alert(previousResult==='Not Saved'?'Interview saved.':'Interview result updated successfully.');
+ };
+}
+
+function enableInterviewEdit(id){
+ const c=candidates.find(x=>x.id===id);if(!c||!c.interview)return;
+ if(c.processStopped){alert('Resume Process before editing the interview result.');return}
+ const form=document.getElementById('interviewForm');if(!form)return;
+ form.querySelectorAll('input,select,textarea').forEach(el=>el.disabled=false);
+ const saveBtn=document.getElementById('saveInterviewBtn');if(saveBtn)saveBtn.style.display='';
+ const editBtn=document.getElementById('editInterviewBtn');if(editBtn)editBtn.style.display='none';
+}
+
+function openStopProcessModal(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ if(!confirm('Are you sure you want to stop the recruitment process for this candidate?'))return;
+ modalTitle.textContent='Stop Candidate Process';
+ modalBody.innerHTML=`
+  <div class="process-stopped-banner">Candidate: ${esc(c.fullName)}<br>This will stop the candidate from moving to the next recruitment stages.</div>
+  <label>Stop Reason <span style="color:var(--red)">*</span>
+   <select id="stopProcessReason" onchange="toggleOtherStopReason()">
+    <option value="">Select Reason</option>
+    <option>Not Suitable</option><option>Candidate Not Interested</option><option>Salary Issue</option><option>Document Issue</option><option>Failed Technical Interview</option><option>Other</option>
+   </select>
+  </label>
+  <label id="otherStopReasonWrap" class="hidden">Other Reason<textarea id="otherStopReason" placeholder="Enter mandatory reason..."></textarea></label>
+  <div class="actions"><button class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn danger" onclick="confirmStopCandidate('${c.id}')">Confirm Stop Process</button></div>`;
+ modalBg.classList.remove('hidden');
+}
+function toggleOtherStopReason(){
+ const v=document.getElementById('stopProcessReason')?.value;
+ document.getElementById('otherStopReasonWrap')?.classList.toggle('hidden',v!=='Other');
+}
+function confirmStopCandidate(id){
+ const c=candidates.find(x=>x.id===id);if(!c)return;
+ const choice=document.getElementById('stopProcessReason')?.value||'';
+ const other=(document.getElementById('otherStopReason')?.value||'').trim();
+ const reason=choice==='Other'?other:choice;
+ if(!choice||!reason){alert('Stop Reason is mandatory. Please select or enter a reason.');return}
+ const previousResult=c.interview?.result||'Not Saved';
+ c.processStopped=true;c.stopReason=reason;c.stoppedAt=new Date().toISOString();c.stoppedBy=currentUser.name;
+ c.interviewHistory=c.interviewHistory||[];
+ c.interviewHistory.push({date:c.stoppedAt,previousResult,newResult:'PROCESS STOPPED',changedBy:currentUser.name,stopReason:reason});
+ c.history=c.history||[];c.history.push({date:c.stoppedAt,text:'PROCESS STOPPED by '+currentUser.name+'. Reason: '+reason});
+ persist();closeModal();renderDashboard();showInterviewWorkspace();alert('Candidate process stopped successfully.');
+}
+function resumeCandidateProcess(id){
+ if(!['superuser','interviewer'].includes(userRole())){alert('Only Super User or Interviewer can resume a stopped candidate.');return}
+ const c=candidates.find(x=>x.id===id);if(!c||!c.processStopped)return;
+ if(!confirm('Resume recruitment process for this candidate?'))return;
+ const previousResult='PROCESS STOPPED';
+ const resumedResult=c.interview?.result||'Interview Pending';
+ c.processStopped=false;c.resumedAt=new Date().toISOString();c.resumedBy=currentUser.name;
+ c.interviewHistory=c.interviewHistory||[];
+ c.interviewHistory.push({date:c.resumedAt,previousResult,newResult:resumedResult,changedBy:currentUser.name,stopReason:c.stopReason||''});
+ c.history=c.history||[];c.history.push({date:c.resumedAt,text:'Recruitment process resumed by '+currentUser.name});
+ persist();renderDashboard();showInterviewWorkspace();alert('Candidate process resumed.');
 }
 function showAgencyResults(){
- const list=visibleCandidates().filter(c=>c.interview&&['Selected','Rejected','Hold'].includes(c.interview.result));
+ const list=visibleCandidates().filter(c=>c.interview&&['Selected','Rejected','Shortlisted for Client','Absent'].includes(c.interview.result));
  mainPanel.innerHTML=`<div class="panel-head"><h2>Interview Results</h2></div>${candidateTable(list)}`
 }
 function showAgencySelected(){
  const list=visibleCandidates().filter(selected);
- mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Designation</th><th>Salary</th><th>Interview Remarks</th><th>Offer Status</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>AED ${c.interview.salary}</td><td class="interview-remarks-cell" title="${esc(c.interview?.remarks||'No interview remarks')}">${c.interview?.remarks?`<div class="interview-remarks-preview">${esc(c.interview.remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Awaiting Response')}</span></td><td>${esc(agencyProgressLabel(c))}</td><td><button class="eye" onclick="openAgencyProgress('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="8">No selected employees.</td></tr>'}</tbody></table></div>`
+ const tableId='agencySelected';mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateMultiFilterHTML(list,tableId)}<div class="table-wrap"><table id="${tableId}Table"><thead><tr><th>ID</th><th>Name</th><th>Designation</th><th>Recommended Client</th><th>Salary</th><th>Interview Remarks</th><th>Offer Status</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr ${candidateFilterAttrs(c)} class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${esc(c.interview?.recommendedClient||'-')}</td><td>AED ${c.interview.salary}</td><td class="interview-remarks-cell" title="${esc(c.interview?.remarks||'No interview remarks')}">${c.interview?.remarks?`<div class="interview-remarks-preview">${esc(c.interview.remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Awaiting Response')}</span></td><td>${esc(agencyProgressLabel(c))}</td><td><button class="eye" onclick="openAgencyProgress('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="9">No selected employees.</td></tr>'}</tbody></table></div>`
 }
 function agencyProgressLabel(c){const p=c.agencyProgress||{};if(p.travelled)return'Travelled to UAE';if(p.ticket)return'Ticket Booked';if(p.visa)return'Visa Received';if(p.signedOffer)return'Signed Offer Sent Back';if(p.offerReceived)return'Offer Letter Received';return'Pending'}
 function openAgencyProgress(id){
@@ -1321,7 +1491,7 @@ function openInterviewerProgress(id){
 
 function showAdminSelected(){
  const list=candidates.filter(selected);
- mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees - Admin Processing</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}<div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Salary</th><th>Interview Remarks</th><th>Offer Response</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>AED ${c.interview.salary}</td><td class="interview-remarks-cell" title="${esc(c.interview?.remarks||'No interview remarks')}">${c.interview?.remarks?`<div class="interview-remarks-preview">${esc(c.interview.remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Pending')}</span></td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="openAdminCandidate('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="10">No selected employees.</td></tr>'}</tbody></table></div>`
+ const tableId='adminSelected';mainPanel.innerHTML=`<div class="panel-head"><h2>Selected Employees - Admin Processing</h2></div><h3 style="margin:8px 0 4px">Designation-wise Summary</h3>${designationSummaryHTML(list)}${candidateMultiFilterHTML(list,tableId)}<div class="table-wrap"><table id="${tableId}Table"><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Recommended Client</th><th>Salary</th><th>Interview Remarks</th><th>Offer Response</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr ${candidateFilterAttrs(c)} class="${c.offerResponse?.status==='Rejected'||c.admin?.visaResult==='Rejected'?'row-rejected':''}"><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${esc(c.interview?.recommendedClient||'-')}</td><td>AED ${c.interview.salary}</td><td class="interview-remarks-cell" title="${esc(c.interview?.remarks||'No interview remarks')}">${c.interview?.remarks?`<div class="interview-remarks-preview">${esc(c.interview.remarks)}</div>`:'<span class="interview-remarks-empty">No remarks</span>'}</td><td><span class="tag ${c.offerResponse?.status==='Rejected'?'tag-rejected':''}">${esc(c.offerResponse?.status||'Pending')}</span></td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="openAdminCandidate('${c.id}')">⊙</button></td></tr>`).join('')||'<tr><td colspan="11">No selected employees.</td></tr>'}</tbody></table></div>`
 }
 function adminLabel(c){
  if(c.admin?.visaResult==='Rejected')return 'Visa Rejected';
@@ -1461,10 +1631,14 @@ function generateOffer(id){
 }
 function printOffer(){const w=window.open('','','width=900,height=700');w.document.write('<html><head><title>Offer Letter</title><style>body{font-family:Arial;padding:35px}table{width:100%;border-collapse:collapse}td{border:1px solid #bbb;padding:10px}h1,h2{text-align:center}</style></head><body>'+offerArea.innerHTML+'</body></html>');w.document.close();w.print()}
 
-function openOps(type){currentOps=type;const ac=adminCounts(),map={selected:ac.selected,offerSend:ac.offerSend,offerReceive:ac.offerReceive,visa:ac.visa,ticket:ac.ticket,travel3:ac.travel3,uaeVisa:ac.uaeVisa},titles={selected:'Total Selected Employees',offerSend:'Pending Offer Letter Send',offerReceive:'Pending Signed Offer Received',visa:'Pending Visa Applied',ticket:'Pending Ticket Booking',travel3:'Travelling Within 3 Days',uaeVisa:'Pending UAE Visa Completion'};mainPanel.innerHTML=`<div class="panel-head"><h2>${titles[type]}</h2></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Travel Date</th><th>Progress</th><th>Action</th></tr></thead><tbody>${map[type].map(c=>`<tr><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${c.admin?.travelDate||'-'}</td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="${['admin','superuser'].includes(userRole())?`openAdminCandidate('${c.id}')`:userRole()==='interviewer'?`openInterviewerProgress('${c.id}')`:`openCandidate('${c.id}')`}">⊙</button></td></tr>`).join('')||'<tr><td colspan="8">No employees found.</td></tr>'}</tbody></table></div>`}
+function openOps(type){
+ currentOps=type;const ac=adminCounts(),map={selected:ac.selected,offerSend:ac.offerSend,offerReceive:ac.offerReceive,visa:ac.visa,ticket:ac.ticket,travel3:ac.travel3,uaeVisa:ac.uaeVisa},titles={selected:'Total Selected Employees',offerSend:'Pending Offer Letter Send',offerReceive:'Pending Signed Offer Received',visa:'Pending Visa Applied',ticket:'Pending Ticket Booking',travel3:'Travelling Within 3 Days',uaeVisa:'Pending UAE Visa Completion'};
+ const list=map[type],tableId='opsList';
+ mainPanel.innerHTML=`<div class="panel-head"><h2>${titles[type]}</h2></div>${candidateMultiFilterHTML(list,tableId)}<div class="table-wrap"><table id="${tableId}Table"><thead><tr><th>ID</th><th>Name</th><th>Agency</th><th>Campaign</th><th>Designation</th><th>Recommended Client</th><th>Travel Date</th><th>Progress</th><th>Action</th></tr></thead><tbody>${list.map(c=>`<tr ${candidateFilterAttrs(c)}><td>${c.id}</td><td>${esc(c.fullName)}</td><td>${esc(c.agencyName)}</td><td>${esc(c.campaignNo)}</td><td>${esc(c.interview.recommendedDesignation)}</td><td>${esc(c.interview?.recommendedClient||'-')}</td><td>${c.admin?.travelDate||'-'}</td><td>${esc(adminLabel(c))}</td><td><button class="eye" onclick="${['admin','superuser'].includes(userRole())?`openAdminCandidate('${c.id}')`:userRole()==='interviewer'?`openInterviewerProgress('${c.id}')`:`openCandidate('${c.id}')`}">⊙</button></td></tr>`).join('')||'<tr><td colspan="9">No employees found.</td></tr>'}</tbody></table></div>`;
+}
 
 function showCampaignReports(){
- const list=visibleCandidates(),groups={};list.forEach(c=>(groups[c.campaignNo]??=[]).push(c));mainPanel.innerHTML=`<div class="panel-head"><h2>Campaign Reports</h2></div><div class="table-wrap"><table><thead><tr><th>Campaign</th><th>Total</th><th>Interview Pending</th><th>Selected</th><th>Rejected</th><th>Hold</th><th>Reached UAE</th></tr></thead><tbody>${Object.entries(groups).map(([k,a])=>`<tr><td><b>${k}</b></td><td>${a.length}</td><td>${a.filter(available).length}</td><td>${a.filter(selected).length}</td><td>${a.filter(c=>c.interview?.result==='Rejected').length}</td><td>${a.filter(c=>c.interview?.result==='Hold').length}</td><td>${a.filter(c=>c.admin?.reachedUAE).length}</td></tr>`).join('')||'<tr><td colspan="7">No campaign data.</td></tr>'}</tbody></table></div>`
+ const list=visibleCandidates(),groups={};list.forEach(c=>(groups[c.campaignNo]??=[]).push(c));mainPanel.innerHTML=`<div class="panel-head"><h2>Campaign Reports</h2></div><div class="table-wrap"><table><thead><tr><th>Campaign</th><th>Total</th><th>Interview Pending</th><th>Selected</th><th>Rejected</th><th>Shortlisted for Client</th><th>Reached UAE</th></tr></thead><tbody>${Object.entries(groups).map(([k,a])=>`<tr><td><b>${k}</b></td><td>${a.length}</td><td>${a.filter(available).length}</td><td>${a.filter(selected).length}</td><td>${a.filter(c=>c.interview?.result==='Rejected').length}</td><td>${a.filter(c=>c.interview?.result==='Shortlisted for Client').length}</td><td>${a.filter(c=>c.admin?.reachedUAE).length}</td></tr>`).join('')||'<tr><td colspan="7">No campaign data.</td></tr>'}</tbody></table></div>`
 }
 
 function showUsers(){
